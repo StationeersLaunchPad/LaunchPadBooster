@@ -64,5 +64,6 @@
       <HintPath>$(StationeersDirectory)\BepInEx\core\Mono.Cecil.dll</HintPath>
       <Private>False</Private>
     </Reference>
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.3.0" />
   </ItemGroup>
 </Project>
