@@ -4,4 +4,7 @@
   <PropertyGroup>
     <AssemblyName>LaunchPadBooster</AssemblyName>
   </PropertyGroup>
+  <Target Name="CopyOutput" AfterTargets="Build">
+    <Copy SourceFiles="$(OutputPath)\$(AssemblyName).dll" DestinationFiles="$(PluginPath)\$(AssemblyName).dll" />
+  </Target>
 </Project>
