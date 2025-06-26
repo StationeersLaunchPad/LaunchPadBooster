@@ -7,8 +7,23 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace LaunchPadBooster.Analyzers
 {
+  [Generator]
+  public class ConnectDataGenerator : IIncrementalGenerator
+  {
+    private static string FullyQualifiedName(ISymbol symbol) => $"{NamespacePrefix(symbol.ContainingNamespace)}{symbol.MetadataName}";
+    private static string NamespacePrefix(INamespaceSymbol ns) => ns.IsGlobalNamespace ? "" : ns.ToDisplayString() + ".";
+    private static string NamespaceName(INamespaceSymbol ns) => ns.IsGlobalNamespace ? "" : ns.ToDisplayString();
+
+    public void Initialize(IncrementalGeneratorInitializationContext context)
+    {
+      context.RegisterPostInitializationOutput(context =>
+      {
+        context.AddSource("Attributes.g.cs", @"
+using System;
+namespace LaunchPadBooster.Generated
+{
   [AttributeUsage(AttributeTargets.Class)]
-  public class ConnectDataAttribute : Attribute
+  internal class ConnectDataAttribute : Attribute
   {
     public readonly Type InterfaceType;
     public readonly Type SaveDataType;
@@ -21,47 +36,39 @@ namespace LaunchPadBooster.Analyzers
   }
 
   [AttributeUsage(AttributeTargets.Property)]
-  public class SavedAttribute : Attribute { }
+  internal class SavedAttribute : Attribute { }
 
   [AttributeUsage(AttributeTargets.Property)]
-  public class NetworkedAttribute : Attribute { }
-
-  [Generator]
-  public class ConnectDataGenerator : IIncrementalGenerator
-  {
-    private static string FullyQualifiedName(ISymbol symbol) => $"{symbol.ContainingNamespace.ToDisplayString()}.{symbol.MetadataName}";
-
-    public void Initialize(IncrementalGeneratorInitializationContext context)
-    {
-      context.RegisterPostInitializationOutput(context =>
-      {
-        context.AddSource("Comparators.g.cs", $@"
-namespace LaunchPadBooster.Generator
-{{
+  internal class NetworkedAttribute : Attribute { }
+}
+");
+        context.AddSource("Comparators.g.cs", @"
+namespace LaunchPadBooster.Generated
+{
   internal static partial class Comparators
-  {{
+  {
     public static bool IsEqual(int a, int b) => a == b;
     public static bool IsEqual(string a, string b) => a == b;
-  }}
-}}");
-        context.AddSource("Serializers.g.cs", $@"
+  }
+}");
+        context.AddSource("Serializers.g.cs", @"
 using Assets.Scripts.Networking;
 
-namespace LaunchPadBooster.Generator
-{{
+namespace LaunchPadBooster.Generated
+{
   internal static partial class Serializers
-  {{
+  {
     public static void Serialize(RocketBinaryWriter writer, int value) => writer.WriteInt32(value);
     public static void Deserialize(RocketBinaryReader reader, out int value) => value = reader.ReadInt32();
 
     public static void Serialize(RocketBinaryWriter writer, string value) => writer.WriteString(value);
     public static void Deserialize(RocketBinaryReader reader, out string value) => value = reader.ReadString();
-  }}
-}}");
+  }
+}");
       });
 
       var pipeline = context.SyntaxProvider.ForAttributeWithMetadataName(
-        fullyQualifiedMetadataName: "LaunchPadBooster.Generator.ConnectDataAttribute",
+        fullyQualifiedMetadataName: "LaunchPadBooster.Generated.ConnectDataAttribute",
         predicate: static (syntaxNode, _) => syntaxNode is ClassDeclarationSyntax,
         transform: static (context, _) =>
         {
@@ -84,7 +91,7 @@ namespace LaunchPadBooster.Generator
               flagBytes = 1 + prop.NetworkIndex / 8;
           }
           return new ConnectedClass(
-            Namespace: clazz.ContainingNamespace?.ToDisplayString(),
+            Namespace: NamespaceName(clazz.ContainingNamespace),
             ClassName: clazz.Name,
             SaveDataType: stypeString,
             Props: props,
@@ -97,16 +104,19 @@ namespace LaunchPadBooster.Generator
       {
         var source = new StringBuilder();
         source.Append($@"
-using Comparators = LaunchPadBooster.Generator.Comparators;
-using Serializers = LaunchPadBooster.Generator.Serializers;
+using Comparators = LaunchPadBooster.Generated.Comparators;
+using Serializers = LaunchPadBooster.Generated.Serializers;
 using ThingSaveData = Assets.Scripts.Objects.ThingSaveData;
 using NetworkManager = Assets.Scripts.Networking.NetworkManager;
 using RocketBinaryReader = Assets.Scripts.Networking.RocketBinaryReader;
 using RocketBinaryWriter = Assets.Scripts.Networking.RocketBinaryWriter;
 using XmlElementAttribute = System.Xml.Serialization.XmlElementAttribute;
-
+");
+        if (model.Namespace != "")
+          source.Append($@"
 namespace {model.Namespace}
-{{
+{{");
+        source.Append($@"
   partial class {model.ClassName}
   {{
 ");
@@ -213,7 +223,9 @@ namespace {model.Namespace}
         }
 
         source.Append($@"
-  }}
+  }}");
+        if (model.Namespace != "")
+          source.Append($@"
 }}");
         context.AddSource($"{model.Namespace}.{model.ClassName}.g.cs", source.ToString());
       });
@@ -229,16 +241,19 @@ namespace {model.Namespace}
       {
         var saved = false;
         var networked = false;
+        var comments = new List<string>();
         foreach (var attr in prop.GetAttributes())
         {
           var fqn = FullyQualifiedName(attr.AttributeClass);
-          if (fqn == "LaunchPadBooster.Generator.SavedAttribute")
+          comments.Add(fqn);
+          if (fqn == "LaunchPadBooster.Generated.SavedAttribute")
             saved = true;
-          else if (fqn == "LaunchPadBooster.Generator.NetworkedAttribute")
+          else if (fqn == "LaunchPadBooster.Generated.NetworkedAttribute")
             networked = true;
         }
         res.Add(new InterfaceProp
         {
+          DebugComments = comments,
           TypeName = prop.Type.ToDisplayString(),
           PropName = prop.Name,
           Saved = saved,
@@ -255,6 +270,7 @@ namespace {model.Namespace}
 
     private struct InterfaceProp
     {
+      public List<string> DebugComments;
       public string TypeName;
       public string PropName;
       public bool Saved;
@@ -264,6 +280,8 @@ namespace {model.Namespace}
       public string GenerateProperty()
       {
         var source = new StringBuilder();
+        foreach (var comment in DebugComments ?? new())
+          source.Append($"\n//{comment}");
         source.Append($@"
     private {TypeName} _{PropName};
     public {TypeName} {PropName}
