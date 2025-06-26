@@ -3,12 +3,10 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <TargetFramework>net48</TargetFramework>
     <LangVersion>9.0</LangVersion>
     <OutputPath>$(SolutionDir)bin\$(Configuration)</OutputPath>
     <PluginPath>$(StationeersDirectory)Bepinex\plugins\StationeersLaunchPad</PluginPath>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
     <LanguageTargets>$(MSBuildToolsPath)\Microsoft.CSharp.targets</LanguageTargets>
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
   </PropertyGroup>
