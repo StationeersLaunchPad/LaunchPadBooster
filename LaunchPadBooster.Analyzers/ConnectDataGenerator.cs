@@ -48,7 +48,9 @@ namespace LaunchPadBooster.Generated
   internal static partial class Comparators
   {
     public static bool IsEqual(int a, int b) => a == b;
+    public static bool IsEqual(long a, long b) => a == b;
     public static bool IsEqual(string a, string b) => a == b;
+    public static bool IsEqual<T>(T a, T b) where T : IReferencable => a?.ReferenceId == b?.ReferenceId;
   }
 }");
         context.AddSource("Serializers.g.cs", @"
@@ -61,8 +63,14 @@ namespace LaunchPadBooster.Generated
     public static void Serialize(RocketBinaryWriter writer, int value) => writer.WriteInt32(value);
     public static void Deserialize(RocketBinaryReader reader, out int value) => value = reader.ReadInt32();
 
+    public static void Serialize(RocketBinaryWriter writer, long value) => writer.WriteInt64(value);
+    public static void Deserialize(RocketBinaryReader reader, out long value) => value = reader.ReadInt64();
+
     public static void Serialize(RocketBinaryWriter writer, string value) => writer.WriteString(value);
     public static void Deserialize(RocketBinaryReader reader, out string value) => value = reader.ReadString();
+
+    public static void Serialize<T>(RocketBinaryWriter writer, T value) where T : IReferencable => writer.WriteInt64(value?.ReferenceId ?? 0);
+    public static void Deserialize<T>(RocketBinaryReader reader, out T value) where T : class, IReferencable => value = Referencable.Find<T>(reader.ReadInt64());
   }
 }");
       });
@@ -78,6 +86,7 @@ namespace LaunchPadBooster.Generated
           var clazz = context.TargetSymbol;
           var props = GetProps(itype);
           var flagBytes = 0;
+          var connectedReferences = false;
 
           string stypeString = null;
           if (stype.Value is INamedTypeSymbol namedType)
@@ -89,13 +98,16 @@ namespace LaunchPadBooster.Generated
           {
             if (prop.Networked)
               flagBytes = 1 + prop.NetworkIndex / 8;
+            if ((prop.Saved || prop.Networked) && prop.Referencable)
+              connectedReferences = true;
           }
           return new ConnectedClass(
             Namespace: NamespaceName(clazz.ContainingNamespace),
             ClassName: clazz.Name,
             SaveDataType: stypeString,
             Props: props,
-            FlagBytes: flagBytes
+            FlagBytes: flagBytes,
+            ConnectedReferences: connectedReferences
           );
         }
       );
@@ -220,6 +232,18 @@ namespace {model.Namespace}
             source.Append(prop.GenerateDeserializeSave());
           source.Append($@"
     }}");
+
+          if (model.ConnectedReferences)
+          {
+            source.Append($@"
+
+    public override void OnFinishedLoad()
+    {{");
+            foreach (var prop in model.Props)
+              source.Append(prop.GenerateOnFinishedLoad());
+            source.Append($@"
+    }}");
+          }
         }
 
         source.Append($@"
@@ -242,10 +266,10 @@ namespace {model.Namespace}
         var saved = false;
         var networked = false;
         var comments = new List<string>();
+        var isReferencable = prop.Type.AllInterfaces.Any(iface => iface.Name == "IReferencable");
         foreach (var attr in prop.GetAttributes())
         {
           var fqn = FullyQualifiedName(attr.AttributeClass);
-          comments.Add(fqn);
           if (fqn == "LaunchPadBooster.Generated.SavedAttribute")
             saved = true;
           else if (fqn == "LaunchPadBooster.Generated.NetworkedAttribute")
@@ -257,6 +281,7 @@ namespace {model.Namespace}
           TypeName = prop.Type.ToDisplayString(),
           PropName = prop.Name,
           Saved = saved,
+          Referencable = isReferencable,
           Networked = networked,
           NetworkIndex = networked ? networkCount : -1,
         });
@@ -266,7 +291,7 @@ namespace {model.Namespace}
       return res;
     }
 
-    private record ConnectedClass(string Namespace, string ClassName, string SaveDataType, EquatableList<InterfaceProp> Props, int FlagBytes);
+    private record ConnectedClass(string Namespace, string ClassName, string SaveDataType, EquatableList<InterfaceProp> Props, int FlagBytes, bool ConnectedReferences);
 
     private struct InterfaceProp
     {
@@ -275,6 +300,7 @@ namespace {model.Namespace}
       public string PropName;
       public bool Saved;
       public bool Networked;
+      public bool Referencable;
       public int NetworkIndex;
 
       public string GenerateProperty()
@@ -282,6 +308,9 @@ namespace {model.Namespace}
         var source = new StringBuilder();
         foreach (var comment in DebugComments ?? new())
           source.Append($"\n//{comment}");
+        if (Referencable)
+          source.Append($@"
+    private long _saved{PropName};");
         source.Append($@"
     private {TypeName} _{PropName};
     public {TypeName} {PropName}
@@ -351,6 +380,9 @@ namespace {model.Namespace}
         if (!Networked)
           return "";
 
+        if (Referencable)
+          return $@"
+      Serializers.Deserialize(reader, out _saved{PropName});";
         return $@"
       Serializers.Deserialize(reader, out _{PropName});";
       }
@@ -359,6 +391,10 @@ namespace {model.Namespace}
       {
         if (!Saved)
           return "";
+        if (Referencable)
+          return $@"
+      [XmlElement]
+      public long {PropName};";
         return $@"
       [XmlElement]
       public {TypeName} {PropName};";
@@ -368,6 +404,9 @@ namespace {model.Namespace}
       {
         if (!Saved)
           return "";
+        if (Referencable)
+          return $@"
+      saveData.{PropName} = _{PropName}?.ReferenceId ?? 0;";
         return $@"
       saveData.{PropName} = _{PropName};";
       }
@@ -376,8 +415,19 @@ namespace {model.Namespace}
       {
         if (!Saved)
           return "";
+        if (Referencable)
+          return $@"
+      _saved{PropName} = saveData.{PropName};";
         return $@"
       _{PropName} = saveData.{PropName};";
+      }
+
+      public string GenerateOnFinishedLoad()
+      {
+        if (!Referencable || !(Saved || Networked))
+          return "";
+        return $@"
+      _{PropName} = Referencable.Find<{TypeName}>(_saved{PropName});";
       }
     }
 
