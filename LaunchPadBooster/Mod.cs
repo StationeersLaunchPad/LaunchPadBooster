@@ -1,6 +1,9 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
+using Assets.Scripts.Objects;
 using LaunchPadBooster.Networking;
+using UnityEngine;
 
 namespace LaunchPadBooster
 {
@@ -11,12 +14,13 @@ namespace LaunchPadBooster
 
     public readonly ModID ID;
 
-    private bool _multiplayerRequired = false;
     private Func<string, bool> _versionCheck;
-    public bool MultiplayerRequired => _multiplayerRequired;
+    public bool MultiplayerRequired { get; private set; } = false;
 
-    private readonly List<Type> _networkMessageTypes = new();
-    public IEnumerable<Type> NetworkMessageTypes => _networkMessageTypes;
+    internal readonly List<Type> NetworkMessageTypes = new();
+    internal readonly List<Thing> Prefabs = new();
+    internal readonly List<IPrefabSetup> Setups = new();
+    internal readonly List<Type> SaveDataTypes = new();
 
     public Mod(string name, string version)
     {
@@ -25,25 +29,49 @@ namespace LaunchPadBooster
       lock (allLock) AllMods.Add(this);
     }
 
-    public void SetMultiplayerRequired(Func<string, bool> versionCheck = null)
+    public void SetVersionCheck(Func<string, bool> versionCheck)
     {
-      this._multiplayerRequired = true;
       this._versionCheck = versionCheck;
+    }
+
+    public void SetMultiplayerRequired()
+    {
+      this.MultiplayerRequired = true;
       ModNetworking.Initialize();
     }
 
-    public bool VersionValid(string version)
+    internal bool VersionValid(string version)
     {
       if (_versionCheck != null) return _versionCheck(version);
       return version == this.ID.Version;
     }
 
+    public void AddSaveDataType<T>()
+    {
+      this.SaveDataTypes.Add(typeof(T));
+    }
+
     public void RegisterNetworkMessage<T>() where T : ModNetworkMessage<T>, new()
     {
-      if (!MultiplayerRequired)
-        throw new Exception("Must set multiplayer required to add network messages");
-      this._networkMessageTypes.Add(typeof(T));
+      SetMultiplayerRequired();
+      this.NetworkMessageTypes.Add(typeof(T));
     }
+
+    public void AddPrefabs(IEnumerable<GameObject> prefabs)
+    {
+      SetMultiplayerRequired();
+      PrefabPatch.Initialize();
+      this.Prefabs.AddRange(prefabs.Select(prefab => prefab.GetComponent<Thing>()).Where(thing => thing != null));
+    }
+
+    public PrefabSetup<T> SetupPrefabs<T>(string name = null)
+    {
+      var setup = new PrefabSetup<T>(name);
+      this.Setups.Add(setup);
+      return setup;
+    }
+
+    public PrefabSetup<Thing> SetupPrefabs(string name = null) => SetupPrefabs<Thing>(name);
   }
 
   public readonly struct ModID
