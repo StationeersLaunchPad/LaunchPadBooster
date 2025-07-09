@@ -81,12 +81,14 @@ namespace LaunchPadBooster.Utils
     // This should only be used prior to prefab load in order to set references
     // Use Prefab.Find<T> after load
     public static T FindPrefab<T>(string prefabName) where T : Thing => FindPrefab<T>(Animator.StringToHash(prefabName));
+    public static Thing FindPrefab(string prefabName) => FindPrefab<Thing>(prefabName);
 
     public static T FindPrefab<T>(int prefabHash) where T : Thing
     {
       var prefab = WorldManager.Instance.SourcePrefabs.Find(prefab => prefab.PrefabHash == prefabHash);
       return prefab as T;
     }
+    public static Thing FindPrefab(int prefabHash) => FindPrefab<Thing>(prefabHash);
 
     private static Material _blueprintMaterial;
     public static Material GetBlueprintMaterial()

@@ -48,6 +48,7 @@ namespace LaunchPadBooster
 
     public void AddSaveDataType<T>()
     {
+      SaveDataPatch.Initialize();
       this.SaveDataTypes.Add(typeof(T));
     }
 

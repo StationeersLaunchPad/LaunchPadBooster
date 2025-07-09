@@ -11,7 +11,7 @@ namespace LaunchPadBooster.Utils
     // ReflectionUtils.Method(() => default(MyType).MyMethod())
     public static MethodInfo Method<T>(Expression<Func<T>> expr) => Method(expr.Body as MethodCallExpression);
     public static MethodInfo Method(Expression<Action> expr) => Method(expr.Body as MethodCallExpression);
-    public static MethodInfo Method(MethodCallExpression call) => VirtualMethodIn(call.Method, call.Object.Type);
+    public static MethodInfo Method(MethodCallExpression call) => VirtualMethodIn(call.Method, call.Object?.Type);
 
     // ReflectionUtils.AsyncMethod(() => default(MyType).MyAsyncMethod())
     // returns the state machine MoveNext method that contains the actual method body

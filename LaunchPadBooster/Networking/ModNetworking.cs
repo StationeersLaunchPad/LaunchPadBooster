@@ -4,6 +4,7 @@ using System.IO;
 using System.Text;
 using Assets.Scripts;
 using Assets.Scripts.Networking;
+using Assets.Scripts.Objects;
 using HarmonyLib;
 using UI;
 using UnityEngine.Networking;
@@ -14,6 +15,8 @@ namespace LaunchPadBooster.Networking
   {
     private static readonly object initLock = new();
     private static bool initialized;
+
+    private const byte NETWORK_VERSION = 1;
 
     private static readonly object assignLock = new();
     private static List<Type> MessageTypes;
@@ -28,6 +31,9 @@ namespace LaunchPadBooster.Networking
 
         var harmony = new Harmony("LaunchPadBooster.Networking");
         harmony.CreateClassProcessor(typeof(ModNetworkPatches), true).Patch();
+
+        // run compatibility patch late to ensure all mod patches are in
+        Prefab.OnPrefabsLoaded += () => ModNetworkCompatibilityPatch.RunPatch(harmony);
 
         initialized = true;
       }
@@ -60,6 +66,8 @@ namespace LaunchPadBooster.Networking
     {
       EnsureAssignment();
 
+      writer.WriteByte(NETWORK_VERSION);
+
       var modInfos = new List<ModInfoFromServer>();
       foreach (var mod in Mod.AllMods)
       {
@@ -87,11 +95,18 @@ namespace LaunchPadBooster.Networking
     }
 
     private static List<ModInfoFromServer> modsFromServer;
+    private static byte serverNetVersion;
     internal static void DeserializeServerModInfo(RocketBinaryReader reader)
     {
       modsFromServer = new();
+      serverNetVersion = 0;
       try
       {
+        // if the network format has changed, don't try to read the data
+        serverNetVersion = reader.ReadByte();
+        if (serverNetVersion != NETWORK_VERSION)
+          return;
+
         var count = reader.ReadUInt16();
         for (var i = 0; i < count; i++)
         {
@@ -109,6 +124,12 @@ namespace LaunchPadBooster.Networking
 
     internal static bool ValidateModInfoClient()
     {
+      if (serverNetVersion != 0 && serverNetVersion != NETWORK_VERSION)
+      {
+        FailClientJoin($"Incompatible LaunchPadBooster version");
+        return false;
+      }
+
       var modsByName = new Dictionary<string, Mod>();
       foreach (var mod in Mod.AllMods)
         modsByName[mod.ID.Name] = mod;
@@ -192,6 +213,8 @@ namespace LaunchPadBooster.Networking
     {
       EnsureAssignment();
 
+      writer.WriteByte(NETWORK_VERSION);
+
       var modInfos = new List<ModInfoFromServer>();
       foreach (var mod in Mod.AllMods)
       {
@@ -219,11 +242,18 @@ namespace LaunchPadBooster.Networking
     }
 
     private static List<ModID> modsFromClient;
+    private static byte clientNetVersion;
     internal static void DeserializeClientModInfo(RocketBinaryReader reader)
     {
       modsFromClient = new();
+      clientNetVersion = 0;
       try
       {
+        // don't try to read data if network version doesn't match
+        clientNetVersion = reader.ReadByte();
+        if (clientNetVersion != NETWORK_VERSION)
+          return;
+
         var count = reader.ReadUInt16();
         for (var i = 0; i < count; i++)
         {
@@ -241,6 +271,12 @@ namespace LaunchPadBooster.Networking
 
     internal static bool ValidateModInfoServer(long hostId, NetworkMessages.VerifyPlayer msg)
     {
+      if (clientNetVersion != 0 && clientNetVersion != NETWORK_VERSION)
+      {
+        RejectClientJoin(hostId, msg, $"Incompatible LaunchPadBooster version");
+        return false;
+      }
+
       var modsByName = new Dictionary<string, Mod>();
       foreach (var mod in Mod.AllMods)
         modsByName[mod.ID.Name] = mod;
