@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Reflection.Emit;
 using Assets.Scripts;
 using Assets.Scripts.Networking;
+using Assets.Scripts.Util;
 using HarmonyLib;
 using LaunchPadBooster.Utils;
 
@@ -142,14 +143,19 @@ namespace LaunchPadBooster.Networking
         matcher.Advance(1);
         matcher.InsertAndAdvance(
           new CodeInstruction(OpCodes.Dup), // dup hashset
-          new CodeInstruction(OpCodes.Ldtoken, typeof(IModNetworkMessage)),
-          CodeInstruction.Call(() => Type.GetTypeFromHandle(default)), // get message type
-          CodeInstruction.Call(() => default(HashSet<Type>).Add(default)), // add to set
-          new CodeInstruction(OpCodes.Pop) // discard result
+          CodeInstruction.Call(() => AddModMessageTypes(default)) // add mod messages
         );
       }
 
       return matcher.Instructions();
+    }
+
+    static void AddModMessageTypes(HashSet<Type> types)
+    {
+      foreach (var mod in Mod.AllMods)
+      {
+        types.AddRange(mod.NetworkMessageTypes);
+      }
     }
   }
 }
