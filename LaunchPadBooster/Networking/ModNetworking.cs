@@ -215,30 +215,17 @@ namespace LaunchPadBooster.Networking
 
       writer.WriteByte(NETWORK_VERSION);
 
-      var modInfos = new List<ModInfoFromServer>();
+      var modIDs = new List<ModID>();
       foreach (var mod in Mod.AllMods)
       {
         if (!mod.MultiplayerRequired)
           continue;
-        var info = new ModInfoFromServer
-        {
-          ID = mod.ID,
-          Messages = new()
-        };
-        foreach (var msg in mod.NetworkMessageTypes)
-        {
-          info.Messages.Add(new ModNetworkMessageMapping
-          {
-            Index = MessageTypeToIndex[msg],
-            TypeName = msg.FullName,
-          });
-        }
-        modInfos.Add(info);
+        modIDs.Add(mod.ID);
       }
 
-      writer.WriteUInt16((ushort)modInfos.Count);
-      foreach (var info in modInfos)
-        info.Serialize(writer);
+      writer.WriteUInt16((ushort)modIDs.Count);
+      foreach (var id in modIDs)
+        writer.WriteModID(id);
     }
 
     private static List<ModID> modsFromClient;
@@ -257,9 +244,8 @@ namespace LaunchPadBooster.Networking
         var count = reader.ReadUInt16();
         for (var i = 0; i < count; i++)
         {
-          var name = reader.ReadString();
-          var version = reader.ReadString();
-          modsFromClient.Add(new ModID(name, version));
+          var id = reader.ReadModID();
+          modsFromClient.Add(id);
         }
       }
       catch (EndOfStreamException)
@@ -346,6 +332,19 @@ namespace LaunchPadBooster.Networking
         return MessageFactory.GetTypeFromIndex(index);
       }
     }
+
+    internal static void WriteModID(this RocketBinaryWriter writer, ModID id)
+    {
+      writer.WriteString(id.Name);
+      writer.WriteString(id.Version);
+    }
+
+    internal static ModID ReadModID(this RocketBinaryReader reader)
+    {
+      var name = reader.ReadString();
+      var version = reader.ReadString();
+      return new(name, version);
+    }
   }
 
   public struct ModNetworkMessageMapping
@@ -373,8 +372,7 @@ namespace LaunchPadBooster.Networking
 
     public void Serialize(RocketBinaryWriter writer)
     {
-      writer.WriteString(ID.Name);
-      writer.WriteString(ID.Version);
+      writer.WriteModID(ID);
       var mcount = (ushort)Messages.Count;
       writer.WriteUInt16(mcount);
       for (var i = 0; i < mcount; i++)
@@ -385,9 +383,7 @@ namespace LaunchPadBooster.Networking
 
     public void Deserialize(RocketBinaryReader reader)
     {
-      var name = reader.ReadString();
-      var version = reader.ReadString();
-      ID = new ModID(name, version);
+      ID = reader.ReadModID();
 
       var mcount = reader.ReadUInt16();
       Messages = new(mcount);
