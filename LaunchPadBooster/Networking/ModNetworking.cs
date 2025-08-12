@@ -304,6 +304,7 @@ namespace LaunchPadBooster.Networking
         HandshakeState = HandshakeType.Rejected,
         Message = message,
       }, NetworkChannel.GeneralTraffic, client);
+      NetworkManager.CloseP2PConnectionServer(client);
     }
 
     public static void WriteMessageType(RocketBinaryWriter writer, Type type)
