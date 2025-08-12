@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Assets.Scripts.Objects;
+using LaunchPadBooster.Commands;
 using LaunchPadBooster.Networking;
 using UnityEngine;
 
@@ -21,6 +22,7 @@ namespace LaunchPadBooster
     internal readonly List<Thing> Prefabs = new();
     internal readonly List<IPrefabSetup> Setups = new();
     internal readonly List<Type> SaveDataTypes = new();
+    internal readonly Dictionary<string, Type> CommandsToType = new();
 
     public Mod(string name, string version)
     {
@@ -56,6 +58,12 @@ namespace LaunchPadBooster
     {
       SetMultiplayerRequired();
       this.NetworkMessageTypes.Add(typeof(T));
+    }
+
+    public void RegisterCommand<T>(T command) where T : ModCommand
+    {
+      CommandsToType[command.Name] = typeof(T);
+      CommandLine.AddCommand(command.Name, command);
     }
 
     public void AddPrefabs(IEnumerable<GameObject> prefabs)
