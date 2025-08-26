@@ -6,7 +6,10 @@ using Assets.Scripts;
 using Assets.Scripts.Networking;
 using Assets.Scripts.Objects;
 using HarmonyLib;
+using LaunchPadBooster.Utils;
 using UI;
+using UnityEngine;
+using UnityEngine.Events;
 using UnityEngine.Networking;
 
 namespace LaunchPadBooster.Networking
@@ -22,6 +25,20 @@ namespace LaunchPadBooster.Networking
     private static List<Type> MessageTypes;
     private static Dictionary<Type, ushort> MessageTypeToIndex;
 
+    private delegate void ConfirmationPanelDelegate(
+      ConfirmationPanel instance,
+      string title,
+      string message,
+      string button1Text,
+      UnityAction button1Click,
+      string button2Text = null,
+      UnityAction button2Click = null,
+      string button3Text = null,
+      UnityAction button3Click = null,
+      bool closeOnEscape = true
+    );
+    private static ConfirmationPanelDelegate ShowConfirmationPanel;
+
     internal static void Initialize()
     {
       lock (initLock)
@@ -34,6 +51,32 @@ namespace LaunchPadBooster.Networking
 
         // run compatibility patch late to ensure all mod patches are in
         Prefab.OnPrefabsLoaded += () => ModNetworkCompatibilityPatch.RunPatch(harmony);
+
+        // make ConfirmationPanel delegate manually for stable/beta compatibility
+        try
+        {
+          var cpanel = typeof(ConfirmationPanel);
+          var argTypes = new Type[] { typeof(string), typeof(string), typeof(string), typeof(UnityAction), typeof(string), typeof(UnityAction), typeof(string), typeof(UnityAction), typeof(bool) };
+          // stable 0.2.5499.24517
+          var m1 = cpanel.GetMethod("SetUpPanel", argTypes);
+          // beta 0.2.5870.25885
+          var m2 = cpanel.GetMethod("ShowRaw", argTypes);
+          if (m1 != null)
+            ShowConfirmationPanel = m1.CreateDelegate<ConfirmationPanelDelegate>();
+          else if (m2 != null)
+          {
+            var m2d = m2.CreateDelegate<ConfirmationPanelDelegate>();
+            ShowConfirmationPanel = (instance, title, message, b1text, b1click, _, _, _, _, _) =>
+              m2d(instance, title, message, Localization.GetInterface(b1text), b1click);
+          }
+        }
+        catch (Exception ex)
+        {
+          Debug.LogException(ex);
+        }
+        // fallback to printing to console if neither found
+        ShowConfirmationPanel ??= (_, title, message, _, click, _, _, _, _, _) => ConsoleWindow.PrintError($"{title}: {message}", true);
+
 
         initialized = true;
       }
@@ -206,7 +249,7 @@ namespace LaunchPadBooster.Networking
       ConsoleWindow.PrintError(message, true);
       NetworkClient.StopConnectionTimer();
       NetworkManager.EndConnection();
-      ConfirmationPanel.Instance.SetUpPanel("Incompatible mods", message, "ButtonOk", NetworkClient.Cancel);
+      ShowConfirmationPanel(ConfirmationPanel.Instance, "Incompatible mods", message, "ButtonOk", NetworkClient.Cancel);
     }
 
     internal static void SerializeClientModInfo(RocketBinaryWriter writer)
