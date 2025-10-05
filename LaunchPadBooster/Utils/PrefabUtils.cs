@@ -85,7 +85,8 @@ namespace LaunchPadBooster.Utils
 
     public static T FindPrefab<T>(int prefabHash) where T : Thing
     {
-      var prefab = WorldManager.Instance.SourcePrefabs.Find(prefab => prefab.PrefabHash == prefabHash);
+      // SourcePrefabs can contain nulls!
+      var prefab = WorldManager.Instance.SourcePrefabs.Find(prefab => prefab != null && prefab.PrefabHash == prefabHash);
       return prefab as T;
     }
     public static Thing FindPrefab(int prefabHash) => FindPrefab<Thing>(prefabHash);
