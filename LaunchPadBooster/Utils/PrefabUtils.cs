@@ -48,7 +48,7 @@ namespace LaunchPadBooster.Utils
         tool = null;
         return false;
       }
-      tool = Prefab.Find<Item>(toolName);
+      tool = FindPrefab<Item>(toolName);
       if (tool == null)
       {
         Debug.LogWarning($"Could not find build tool {toolName} for prefab {structure.PrefabName}");
@@ -68,14 +68,14 @@ namespace LaunchPadBooster.Utils
     {
       if (!CanSetBuildTool(structure, toolName, index, out _, out var tool))
         return;
-      structure.BuildStates[index].Tool.ToolEntry = tool;
+      structure.BuildStates[index].Tool.ToolEntry2 = tool;
     }
 
     public static void SetExitTool(this Structure structure, string toolName, int index = 0)
     {
       if (!CanSetBuildTool(structure, toolName, index, out _, out var tool))
         return;
-      structure.BuildStates[index].Tool.ToolEntry = tool;
+      structure.BuildStates[index].Tool.ToolExit = tool;
     }
 
     // This should only be used prior to prefab load in order to set references
