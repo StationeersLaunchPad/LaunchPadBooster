@@ -1,4 +1,3 @@
-using System.Data.Odbc;
 using Assets.Scripts;
 using Assets.Scripts.Objects;
 using Assets.Scripts.Objects.Motherboards;
