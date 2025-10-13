@@ -1,3 +1,4 @@
+using System.Data.Odbc;
 using Assets.Scripts;
 using Assets.Scripts.Objects;
 using Assets.Scripts.Objects.Motherboards;
@@ -76,6 +77,23 @@ namespace LaunchPadBooster.Utils
       if (!CanSetBuildTool(structure, toolName, index, out _, out var tool))
         return;
       structure.BuildStates[index].Tool.ToolExit = tool;
+    }
+    
+    public static void AddToMultiConstructorKit(this Structure structure, string kitName, int order = -1)
+    {
+      if (!CanSetBuildTool(structure, kitName, 0, out _, out var tool))
+        return;
+
+      var itemKit = FindPrefab<MultiConstructor>(kitName);
+      if (itemKit == null)
+        return;
+
+      if (order < 0 || order >= itemKit.Constructables.Count)
+        itemKit.Constructables.Add(structure);
+      else
+        itemKit.Constructables.Insert(order, structure);
+    
+      structure.BuildStates[0].Tool.ToolExit = tool;
     }
 
     // This should only be used prior to prefab load in order to set references

@@ -116,5 +116,12 @@ namespace LaunchPadBooster
         return;
       structure.BuildStates[index].Tool.ToolExit = tool;
     }
+    
+    public PrefabSetup<T> AddToMultiConstructorKit(string kitName, int order = -1) => RunFunc(prefab => _AddToMultiConstructorKit(prefab, kitName, order));
+    private static void _AddToMultiConstructorKit(T prefab, string kitName, int order = -1)
+    {
+      PrefabUtils.AddToMultiConstructorKit(prefab as Structure, kitName, order);
+    }
+    
   }
 }
