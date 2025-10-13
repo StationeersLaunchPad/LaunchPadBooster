@@ -82,16 +82,20 @@ namespace LaunchPadBooster.Utils
     {
       if (!CanSetBuildTool(structure, kitName, 0, out _, out var tool))
         return;
-
-      var itemKit = FindPrefab<MultiConstructor>(kitName);
-      if (itemKit == null)
+      
+      if (tool is not MultiConstructor itemKit || itemKit == null)
         return;
 
-      if (order < 0 || order >= itemKit.Constructables.Count)
-        itemKit.Constructables.Add(structure);
-      else
-        itemKit.Constructables.Insert(order, structure);
-    
+      if (!itemKit.Constructables.Contains(structure))
+      {
+        // Clamp order to a valid insert position; -1 or any out-of-range becomes "append".
+        int insertIndex = (order < 0 || order > itemKit.Constructables.Count)
+          ? itemKit.Constructables.Count
+          : order;
+
+        itemKit.Constructables.Insert(insertIndex, structure);
+      }
+
       structure.BuildStates[0].Tool.ToolExit = tool;
     }
 
