@@ -2,10 +2,13 @@
   <Import Project="$(SolutionDir)global.VS.props" />
   <Import Project="$(SolutionDir)globalRefs.VS.props" />
   <PropertyGroup>
-    <AssemblyName>LaunchPadBooster</AssemblyName>
-    <TargetFramework>net48</TargetFramework>
+    <AssemblyName>LaunchPadBooster.Analyzers</AssemblyName>
+    <TargetFramework>net6.0</TargetFramework>
   </PropertyGroup>
-  <Target Name="CopyOutput" AfterTargets="Build">
+  <ItemGroup>
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.3.0" />
+  </ItemGroup>
+  <Target Name="CopyOutput" AfterTargets="Build"> <!-- TODO: do we want to distribute with SLP? or just with dev tools? -->
     <Copy SourceFiles="$(OutputPath)\$(AssemblyName).dll" DestinationFiles="$(PluginPath)\$(AssemblyName).dll" />
   </Target>
 </Project>
