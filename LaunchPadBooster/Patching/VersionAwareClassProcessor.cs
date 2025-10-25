@@ -33,7 +33,7 @@ namespace LaunchPadBooster.Patching
             {
                 var info = (HarmonyMethod)attributePatchInfo.GetValue(patchMethod);
                 GameVersion ver = info.method.GetCustomAttributes().OfType<GameVersion>().FirstOrDefault();
-                if (ver != null && (ver.MinVersion > version || ver.MaxVersion < version))
+                if (ver != null && !ver.VersionMatches(version))
                 {
                     Debug.Log(
                         $"Patch in {type.FullName}.{info.method.Name} for {info.declaringType.Name}.{info.methodName} ignored because game version does not match!");

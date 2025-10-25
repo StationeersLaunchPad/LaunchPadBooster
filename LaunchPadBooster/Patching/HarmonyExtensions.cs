@@ -15,7 +15,7 @@ namespace LaunchPadBooster.Patching
                 var ver = type.GetCustomAttributes(true).OfType<GameVersion>().FirstOrDefault();
                 var version = typeof(GameManager).Assembly.GetName().Version;
                 
-                if (ver != null && (ver.MinVersion > version || ver.MaxVersion < version) )
+                if (ver != null && !ver.VersionMatches(version))
                 {
                     Debug.Log($"Patch class {type.FullName} ignored because game version does not match!");
                     Debug.Log($"Current: {version} Min: {ver?.MinVersion} Max: {ver?.MaxVersion}");
