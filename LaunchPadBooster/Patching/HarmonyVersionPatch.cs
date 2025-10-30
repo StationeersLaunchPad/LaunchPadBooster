@@ -1,4 +1,5 @@
 using System;
+using Assets.Scripts;
 
 namespace LaunchPadBooster.Patching
 {
@@ -7,12 +8,13 @@ namespace LaunchPadBooster.Patching
     {
         public readonly Version MinVersion;
         public readonly Version MaxVersion;
+        public static readonly Version CurrentVersion = typeof(GameManager).Assembly.GetName().Version;
 
-        public override string Description => $"Min: {MinVersion} Max: {MaxVersion}";
+        public override string Description => $"Current: {CurrentVersion} Min: {MinVersion} Max: {MaxVersion}";
 
         public HarmonyVersionPatch(string minVersion, string maxVersion) 
-            : base((h,ver) 
-                => (Version) ver >= ((HarmonyVersionPatch) h).MinVersion && (Version) ver <= ((HarmonyVersionPatch) h).MaxVersion)
+            : base((h) 
+                => CurrentVersion >= ((HarmonyVersionPatch) h).MinVersion && CurrentVersion <= ((HarmonyVersionPatch) h).MaxVersion)
         {
             MinVersion = new Version(minVersion);
             MaxVersion = new Version(maxVersion);

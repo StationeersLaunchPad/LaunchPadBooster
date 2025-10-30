@@ -8,9 +8,9 @@ using UnityEngine;
 
 namespace LaunchPadBooster.Patching
 {
-    class VersionAwareClassProcessor : PatchClassProcessor
+    class HarmonyConditionalClassProcessor : PatchClassProcessor
     {
-        public VersionAwareClassProcessor(Harmony instance, Type type, Version version,
+        public HarmonyConditionalClassProcessor(Harmony instance, Type type,
             bool allowUnannotatedType = false) : base(instance, type, allowUnannotatedType)
         {
             var patchMethods = (IList)typeof(PatchClassProcessor)
@@ -28,11 +28,11 @@ namespace LaunchPadBooster.Patching
             {
                 var info = (HarmonyMethod)attributePatchInfo.GetValue(patchMethod);
                 var patch = info.method.GetCustomAttributes().OfType<HarmonyConditionalPatch>().FirstOrDefault();
-                if (patch == null || patch.CanPatch(version)) continue;
+                if (patch == null || patch.CanPatch()) continue;
                 
                 Debug.Log(
                     $"Patch in {type.FullName}.{info.method.Name} for {info.declaringType.Name}.{info.methodName} ignored because game version does not match!");
-                Debug.Log($"Current: {version} {patch.Description}");
+                Debug.Log(patch.Description);
                 toRemove.Add(patchMethod);
             }
 

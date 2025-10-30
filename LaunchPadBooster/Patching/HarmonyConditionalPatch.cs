@@ -5,14 +5,14 @@ namespace LaunchPadBooster.Patching
     [AttributeUsage(AttributeTargets.Class | AttributeTargets.Method)]
     public class HarmonyConditionalPatch : Attribute
     {
-        private Func<HarmonyConditionalPatch, object, bool> canPatch;
+        private Func<HarmonyConditionalPatch, bool> canPatch;
         private bool lastResult;
 
-        public bool CanPatch(object o) => lastResult = canPatch(this, o);
+        public bool CanPatch() => lastResult = canPatch(this);
 
         public virtual string Description => $"HarmonyConditionalPatch({lastResult})";
 
-        public HarmonyConditionalPatch(Func<HarmonyConditionalPatch, object, bool> canPatch)
+        public HarmonyConditionalPatch(Func<HarmonyConditionalPatch, bool> canPatch)
         {
             this.canPatch = canPatch;
         }
