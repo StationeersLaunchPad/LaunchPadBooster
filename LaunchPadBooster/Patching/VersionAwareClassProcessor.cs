@@ -15,31 +15,25 @@ namespace LaunchPadBooster.Patching
         {
             var patchMethods = (IList)typeof(PatchClassProcessor)
                 .GetField("patchMethods", BindingFlags.NonPublic | BindingFlags.Instance)?.GetValue(this);
-            if (patchMethods == null || patchMethods.Count == 0)
-            {
-                return;
-            }
+            
+            if (patchMethods == null || patchMethods.Count == 0) return;
 
             var attributePatchInfo = patchMethods[0].GetType()
                 .GetField("info", BindingFlags.NonPublic | BindingFlags.Instance);
 
             var toRemove = new List<object>();
-            if (attributePatchInfo == null)
-            {
-                return;
-            }
+            if (attributePatchInfo == null) return;
 
             foreach (var patchMethod in patchMethods)
             {
                 var info = (HarmonyMethod)attributePatchInfo.GetValue(patchMethod);
-                HarmonyVersionPatch ver = info.method.GetCustomAttributes().OfType<HarmonyVersionPatch>().FirstOrDefault();
-                if (ver != null && !ver.CanPatch(version))
-                {
-                    Debug.Log(
-                        $"Patch in {type.FullName}.{info.method.Name} for {info.declaringType.Name}.{info.methodName} ignored because game version does not match!");
-                    Debug.Log($"Current: {version} Min: {ver?.MinVersion} Max: {ver?.MaxVersion}");
-                    toRemove.Add(patchMethod);
-                }
+                var patch = info.method.GetCustomAttributes().OfType<HarmonyConditionalPatch>().FirstOrDefault();
+                if (patch == null || patch.CanPatch(version)) continue;
+                
+                Debug.Log(
+                    $"Patch in {type.FullName}.{info.method.Name} for {info.declaringType.Name}.{info.methodName} ignored because game version does not match!");
+                Debug.Log($"Current: {version} {patch.Description}");
+                toRemove.Add(patchMethod);
             }
 
             foreach (var patchMethod in toRemove)

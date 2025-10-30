@@ -7,7 +7,9 @@ namespace LaunchPadBooster.Patching
     {
         public readonly Version MinVersion;
         public readonly Version MaxVersion;
-        
+
+        public override string Description => $"Min: {MinVersion} Max: {MaxVersion}";
+
         public HarmonyVersionPatch(string minVersion, string maxVersion) 
             : base((h,ver) 
                 => (Version) ver >= ((HarmonyVersionPatch) h).MinVersion && (Version) ver <= ((HarmonyVersionPatch) h).MaxVersion)

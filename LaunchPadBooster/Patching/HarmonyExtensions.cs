@@ -12,13 +12,13 @@ namespace LaunchPadBooster.Patching
         {
             AccessTools.GetTypesFromAssembly(new StackTrace().GetFrame(1).GetMethod().ReflectedType?.Assembly).Do(type =>
             {
-                var ver = type.GetCustomAttributes(true).OfType<HarmonyVersionPatch>().FirstOrDefault();
+                var patch = type.GetCustomAttributes(true).OfType<HarmonyConditionalPatch>().FirstOrDefault();
                 var version = typeof(GameManager).Assembly.GetName().Version;
                 
-                if (ver != null && !ver.CanPatch(version))
+                if (patch != null && !patch.CanPatch(version))
                 {
                     Debug.Log($"Patch class {type.FullName} ignored because game version does not match!");
-                    Debug.Log($"Current: {version} Min: {ver?.MinVersion} Max: {ver?.MaxVersion}");
+                    Debug.Log($"Current: {version} {patch.Description}");
                     return;
                 }
                 new VersionAwareClassProcessor(harmony, type, version).Patch();
