@@ -4,10 +4,10 @@ using UnityEngine;
 
 namespace LaunchPadBooster.Patching
 {
-    [HarmonyVersionPatch("0.0.0.0", "0.2.9999.99999")]
+    [HarmonyGameVersionPatch("0.0.0.0", "0.2.9999.99999")]
     public static class SamplePatches
     {
-        [HarmonyVersionPatch("0.0.0.0", "0.2.0.0")]
+        [HarmonyGameVersionPatch("0.0.0.0", "0.2.0.0")]
         [HarmonyPatch(typeof(Item), nameof(Item.OnUseItem)), HarmonyPostfix]
         static void Item_OnUseItem(ref Thing __result, Thing useOnThing)
         {
