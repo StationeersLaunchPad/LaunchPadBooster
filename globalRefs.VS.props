@@ -48,8 +48,8 @@
       <HintPath>$(StationeersDirectory)\rocketstation_Data\Managed\Unity.TextMeshPro.dll</HintPath>
       <Private>False</Private>
     </Reference>
-    <Reference Include="Unitask">
-      <HintPath>$(StationeersDirectory)\rocketstation_Data\Managed\Unitask.dll</HintPath>
+    <Reference Include="UniTask">
+      <HintPath>$(StationeersDirectory)\rocketstation_Data\Managed\UniTask.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="0Harmony">
