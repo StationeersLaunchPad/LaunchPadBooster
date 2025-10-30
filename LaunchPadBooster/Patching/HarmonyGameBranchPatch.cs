@@ -8,7 +8,9 @@ namespace LaunchPadBooster.Patching
     public class HarmonyGameBranchPatch : HarmonyConditionalPatch
     {
         public readonly String[] Branches;
-        public static readonly String CurrentBranch = "public"; 
+        public static readonly String CurrentBranch = "public";
+        
+        public override string Description => $"Current: {CurrentBranch} Branches: [{string.Join(",", Branches)}]";
         public HarmonyGameBranchPatch(String[] branches) : 
             base((h) => ((HarmonyGameBranchPatch)h).Branches.Contains(CurrentBranch))
         {
