@@ -1,10 +1,16 @@
-<Project Sdk="Microsoft.NET.Sdk" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <Import Project="$(SolutionDir)global.VS.props" />
-  <Import Project="$(SolutionDir)globalRefs.VS.props" />
+﻿<Project Sdk="Microsoft.NET.Sdk" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
     <AssemblyName>LaunchPadBooster</AssemblyName>
+    <RootNamespace>$(AssemblyName)</RootNamespace>
   </PropertyGroup>
+  
   <Target Name="CopyOutput" AfterTargets="Build">
-    <Copy SourceFiles="$(OutputPath)\$(AssemblyName).dll" DestinationFiles="$(PluginPath)\$(AssemblyName).dll" />
+    <Copy SourceFiles="$(OutputPath)\$(AssemblyName).dll" DestinationFiles="$(SLPPluginPath)\$(AssemblyName).dll" />
   </Target>
+  
+  <!-- Import Stationeers VS properties - paths etc. -->
+  <Import Project="$(SolutionDir)Stationeers.VS.props" />
+
+  <!-- Import Game/Unity DLL references -->
+  <Import Project="$(SolutionDir)Stationeers.VS.References.props" />
 </Project>
