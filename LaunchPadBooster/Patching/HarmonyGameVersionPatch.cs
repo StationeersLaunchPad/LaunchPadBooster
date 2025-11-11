@@ -4,7 +4,7 @@ using Assets.Scripts;
 namespace LaunchPadBooster.Patching
 {
     [AttributeUsage(AttributeTargets.Class | AttributeTargets.Method)]
-    class HarmonyGameVersionPatch : HarmonyConditionalPatch
+    public class HarmonyGameVersionPatch : HarmonyConditionalPatch
     {
         public readonly Version MinVersion;
         public readonly Version MaxVersion;
