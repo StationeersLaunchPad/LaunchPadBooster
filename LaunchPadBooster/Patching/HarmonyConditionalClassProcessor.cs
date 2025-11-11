@@ -31,7 +31,7 @@ namespace LaunchPadBooster.Patching
                 if (patch == null || patch.CanPatch()) continue;
                 
                 Debug.Log(
-                    $"Patch in {type.FullName}.{info.method.Name} for {info.declaringType.Name}.{info.methodName} ignored because game version does not match!");
+                    $"Patch in {type.FullName}.{info.method.Name} for {info.declaringType.Name}.{info.methodName} ignored because specified condition is false!");
                 Debug.Log(patch.Description);
                 toRemove.Add(patchMethod);
             }

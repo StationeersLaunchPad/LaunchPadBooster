@@ -15,7 +15,7 @@ namespace LaunchPadBooster.Patching
                 
                 if (patch != null && !patch.CanPatch())
                 {
-                    Debug.Log($"Patch class {type.FullName} ignored because game version does not match!");
+                    Debug.Log($"Patch class {type.FullName} ignored because specified condition is false!");
                     Debug.Log(patch.Description);
                     return;
                 }
