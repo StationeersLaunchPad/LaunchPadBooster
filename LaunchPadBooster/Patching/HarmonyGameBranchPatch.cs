@@ -10,8 +10,10 @@ namespace LaunchPadBooster.Patching
         
         //Note: the reason for using `public` for the case where the branch is not specified is
         //because when downloading a branch with steamcmd, when you specify `-beta public`, it will download the main branch
-        public static readonly String CurrentBranch = Steamworks.SteamApps.CurrentBetaName ?? "public";
-        
+
+        private static string _currentBranch;
+        public static string CurrentBranch => _currentBranch ??= Steamworks.SteamApps.CurrentBetaName ?? "public";
+
         public override string Description => $"Current: {CurrentBranch} Branches: [{string.Join(",", Branches)}]";
         public HarmonyGameBranchPatch(String[] branches) : 
             base((h) => ((HarmonyGameBranchPatch)h).Branches.Contains(CurrentBranch))
