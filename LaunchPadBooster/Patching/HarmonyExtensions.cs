@@ -41,7 +41,7 @@ namespace LaunchPadBooster.Patching
         {
             var patch = type.GetCustomAttributes(true).OfType<HarmonyConditionalPatch>().FirstOrDefault();
                 
-            if (patch != null && !patch.CanPatch())
+            if (patch is { CanPatch: false })
             {
                 Debug.Log($"Patch class {type.FullName} ignored because specified condition is false!");
                 Debug.Log(patch.Description);

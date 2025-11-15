@@ -28,7 +28,7 @@ namespace LaunchPadBooster.Patching
             {
                 var info = (HarmonyMethod)attributePatchInfo.GetValue(patchMethod);
                 var patch = info.method.GetCustomAttributes().OfType<HarmonyConditionalPatch>().FirstOrDefault();
-                if (patch == null || patch.CanPatch()) continue;
+                if (patch == null || patch.CanPatch) continue;
                 
                 Debug.Log(
                     $"Patch in {type.FullName}.{info.method.Name} for {info.declaringType.Name}.{info.methodName} ignored because specified condition is false!");
