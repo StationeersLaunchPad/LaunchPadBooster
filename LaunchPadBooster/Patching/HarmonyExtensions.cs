@@ -39,13 +39,12 @@ namespace LaunchPadBooster.Patching
          */
         public static void ConditionalPatch(this Harmony harmony, Type type)
         {
-            var patch = type.GetCustomAttributes(true).OfType<HarmonyConditionalPatch>().FirstOrDefault();
-                
-            if (patch is { CanPatch: false })
+            var patches = type.GetCustomAttributes(true).OfType<HarmonyConditionalPatch>().ToList();
+            foreach (var patch in patches.Where(patch => !patch.CanPatch))
             {
-                Debug.Log($"Patch class {type.FullName} ignored because specified condition is false!");
-                Debug.Log(patch.Description);
-                return;
+              Debug.Log($"Patch class {type.FullName} ignored because specified condition is false!");
+              Debug.Log(patch.Description);
+              return;
             }
             new HarmonyConditionalClassProcessor(harmony, type).Patch();
         }

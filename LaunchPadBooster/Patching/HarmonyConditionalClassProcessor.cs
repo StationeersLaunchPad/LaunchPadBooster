@@ -27,13 +27,14 @@ namespace LaunchPadBooster.Patching
             foreach (var patchMethod in patchMethods)
             {
                 var info = (HarmonyMethod)attributePatchInfo.GetValue(patchMethod);
-                var patch = info.method.GetCustomAttributes().OfType<HarmonyConditionalPatch>().FirstOrDefault();
-                if (patch == null || patch.CanPatch) continue;
-                
-                Debug.Log(
+                var patches = info.method.GetCustomAttributes().OfType<HarmonyConditionalPatch>().ToList();
+                foreach (var patch in patches.Where(patch => !patch.CanPatch))
+                {
+                  Debug.Log(
                     $"Patch in {type.FullName}.{info.method.Name} for {info.declaringType.Name}.{info.methodName} ignored because specified condition is false!");
-                Debug.Log(patch.Description);
-                toRemove.Add(patchMethod);
+                  Debug.Log(patch.Description);
+                  toRemove.Add(patchMethod);
+                }
             }
 
             foreach (var patchMethod in toRemove)
