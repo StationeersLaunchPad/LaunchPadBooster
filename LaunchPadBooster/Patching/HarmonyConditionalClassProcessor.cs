@@ -30,9 +30,12 @@ namespace LaunchPadBooster.Patching
                 var patches = info.method.GetCustomAttributes().OfType<HarmonyConditionalPatch>().ToList();
                 foreach (var patch in patches.Where(patch => !patch.CanPatch))
                 {
-                  Debug.Log(
-                    $"Patch in {type.FullName}.{info.method.Name} for {info.declaringType.Name}.{info.methodName} ignored because specified condition is false!");
-                  Debug.Log(patch.Description);
+                  if (info.debug ?? false)
+                  {
+                    Debug.Log(
+                      $"Patch in {type.FullName}.{info.method.Name} for {info.declaringType.Name}.{info.methodName} ignored because specified condition is false!");
+                    Debug.Log(patch.Description);
+                  }
                   toRemove.Add(patchMethod);
                 }
             }
