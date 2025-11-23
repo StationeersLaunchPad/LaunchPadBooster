@@ -22,7 +22,7 @@ namespace LaunchPadBooster.Patching
       var start = acf.IndexOf("\"UserConfig\"", StringComparison.Ordinal);
       start = acf.IndexOf("\"BetaKey\"", start, StringComparison.Ordinal);
       start = acf.IndexOf("\"", start+1, StringComparison.Ordinal);
-      var end = acf.IndexOf("}", start, StringComparison.Ordinal);
+      var end = acf.IndexOf("\n", start, StringComparison.Ordinal);
       if (start == -1 || end == -1) return null;
       var branch = acf.Substring(start, end - start).Replace("\"", "").Trim();
       return branch;
