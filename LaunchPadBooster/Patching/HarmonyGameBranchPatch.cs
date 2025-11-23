@@ -20,11 +20,15 @@ namespace LaunchPadBooster.Patching
       if (!File.Exists(acfPath)) return null;
       var acf = string.Join("\n", File.ReadAllLines(acfPath));
       var start = acf.IndexOf("\"UserConfig\"", StringComparison.Ordinal);
-      start = acf.IndexOf("\"BetaKey\"", start, StringComparison.Ordinal);
-      start = acf.IndexOf("\"", start+1, StringComparison.Ordinal);
-      var end = acf.IndexOf("\n", start, StringComparison.Ordinal);
+      var end =  acf.IndexOf("}", start, StringComparison.Ordinal);
+      var userconfig =  acf.Substring(start, end - start);
       if (start == -1 || end == -1) return null;
-      var branch = acf.Substring(start, end - start).Replace("\"", "").Trim();
+      
+      start = userconfig.IndexOf("\"BetaKey\"", StringComparison.Ordinal)+9;
+      end = userconfig.IndexOf("\n", start, StringComparison.Ordinal);
+      if (start == -1 || end == -1) return null;
+      
+      var branch = userconfig.Substring(start, end - start).Replace("\"", "").Trim();
       return branch;
     }
     
