@@ -1,0 +1,11 @@
+<Solution>
+  <Folder Name="/.LBP/">
+    <File Path=".gitignore" />
+    <File Path="LICENSE" />
+    <File Path="README.md" />
+    <File Path="Stationeers.VS.props" />
+    <File Path="Stationeers.VS.References.props" />
+    <File Path="Stationeers.VS.User.props" />
+  </Folder>
+  <Project Path="LaunchPadBooster/LaunchPadBooster.csproj" />
+</Solution>

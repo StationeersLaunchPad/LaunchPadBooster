@@ -5,6 +5,7 @@
 
 Stationeers.VS.User.props
 build/
+.editorconfig
 
 # User-specific files
 *.rsuser
