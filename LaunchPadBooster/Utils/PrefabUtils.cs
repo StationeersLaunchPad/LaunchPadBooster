@@ -3,18 +3,20 @@ using Assets.Scripts.Objects;
 using Assets.Scripts.Objects.Motherboards;
 using UnityEngine;
 
-namespace LaunchPadBooster.Utils
-{
-  public static class PrefabUtils
-  {
-    public static Material GetColorMaterial(ColorType color, bool emissive = false)
-    {
-      var swatch = GameManager.GetColorSwatch((int)color);
-      return emissive ? swatch.Emissive : swatch.Normal;
-    }
+namespace LaunchPadBooster.Utils;
 
+public static class PrefabUtils
+{
+  public static Material GetColorMaterial(ColorType color, bool emissive = false)
+  {
+    var swatch = GameManager.GetColorSwatch((int)color);
+    return emissive ? swatch.Emissive : swatch.Normal;
+  }
+
+  extension(Thing thing)
+  {
     // Replaces the given material with the builtin color swatch material on all renderers
-    public static void ReplaceMaterialWithColor(this Thing thing, Material material, ColorType color, bool emissive = false)
+    public void ReplaceMaterialWithColor(Material material, ColorType color, bool emissive = false)
     {
       var replaceMat = GetColorMaterial(color, emissive);
 
@@ -33,7 +35,7 @@ namespace LaunchPadBooster.Utils
       }
     }
 
-    public static bool CanSetBuildTool(Thing thing, string toolName, int index, out Structure structure, out Item tool)
+    public bool CanSetBuildTool(string toolName, int index, out Structure structure, out Item tool)
     {
       structure = thing as Structure;
       if (structure == null)
@@ -56,33 +58,36 @@ namespace LaunchPadBooster.Utils
       }
       return true;
     }
+  }
 
-    public static void SetEntryTool(this Structure structure, string toolName, int index = 0)
+  extension(Structure structure)
+  {
+    public void SetEntryTool(string toolName, int index = 0)
     {
       if (!CanSetBuildTool(structure, toolName, index, out _, out var tool))
         return;
       structure.BuildStates[index].Tool.ToolEntry = tool;
     }
 
-    public static void SetEntry2Tool(this Structure structure, string toolName, int index = 0)
+    public void SetEntry2Tool(string toolName, int index = 0)
     {
       if (!CanSetBuildTool(structure, toolName, index, out _, out var tool))
         return;
       structure.BuildStates[index].Tool.ToolEntry2 = tool;
     }
 
-    public static void SetExitTool(this Structure structure, string toolName, int index = 0)
+    public void SetExitTool(string toolName, int index = 0)
     {
       if (!CanSetBuildTool(structure, toolName, index, out _, out var tool))
         return;
       structure.BuildStates[index].Tool.ToolExit = tool;
     }
-    
-    public static void AddToMultiConstructorKit(this Structure structure, string kitName, int order = -1)
+
+    public void AddToMultiConstructorKit(string kitName, int order = -1)
     {
       if (!CanSetBuildTool(structure, kitName, 0, out _, out var tool))
         return;
-      
+
       if (tool is not MultiConstructor itemKit || itemKit == null)
         return;
 
@@ -98,36 +103,38 @@ namespace LaunchPadBooster.Utils
 
       structure.BuildStates[0].Tool.ToolExit = tool;
     }
+  }
 
-    // This should only be used prior to prefab load in order to set references
-    // Use Prefab.Find<T> after load
-    public static T FindPrefab<T>(string prefabName) where T : Thing => FindPrefab<T>(Animator.StringToHash(prefabName));
-    public static Thing FindPrefab(string prefabName) => FindPrefab<Thing>(prefabName);
+  // This should only be used prior to prefab load in order to set references
+  // Use Prefab.Find<T> after load
+  public static T FindPrefab<T>(string prefabName) where T : Thing =>
+    FindPrefab<T>(Animator.StringToHash(prefabName));
+  public static Thing FindPrefab(string prefabName) => FindPrefab<Thing>(prefabName);
 
-    public static T FindPrefab<T>(int prefabHash) where T : Thing
-    {
-      // SourcePrefabs can contain nulls!
-      var prefab = WorldManager.Instance.SourcePrefabs.Find(prefab => prefab != null && prefab.PrefabHash == prefabHash);
-      return prefab as T;
-    }
-    public static Thing FindPrefab(int prefabHash) => FindPrefab<Thing>(prefabHash);
+  public static T FindPrefab<T>(int prefabHash) where T : Thing
+  {
+    // SourcePrefabs can contain nulls!
+    var prefab = WorldManager.Instance.SourcePrefabs.Find(
+      prefab => prefab != null && prefab.PrefabHash == prefabHash);
+    return prefab as T;
+  }
+  public static Thing FindPrefab(int prefabHash) => FindPrefab<Thing>(prefabHash);
 
-    private static Material _blueprintMaterial;
-    public static Material GetBlueprintMaterial()
-    {
-      if (_blueprintMaterial == null)
-      {
-        foreach (var prefab in WorldManager.Instance.SourcePrefabs)
-        {
-          if (prefab.Blueprint == null)
-            continue;
-          if (!prefab.Blueprint.TryGetComponent<MeshRenderer>(out var renderer))
-            continue;
-          _blueprintMaterial = renderer.sharedMaterials[0];
-          break;
-        }
-      }
+  private static Material _blueprintMaterial;
+  public static Material GetBlueprintMaterial()
+  {
+    if (_blueprintMaterial != null)
       return _blueprintMaterial;
+
+    foreach (var prefab in WorldManager.Instance.SourcePrefabs)
+    {
+      if (prefab.Blueprint == null)
+        continue;
+      if (!prefab.Blueprint.TryGetComponent<MeshRenderer>(out var renderer))
+        continue;
+      _blueprintMaterial = renderer.sharedMaterials[0];
+      break;
     }
+    return _blueprintMaterial;
   }
 }
