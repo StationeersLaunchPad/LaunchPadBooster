@@ -16,14 +16,14 @@ public class PrefabSetup<T> : IPrefabSetup
 {
   public readonly string PrefabName;
 
-  private readonly List<Action<T>> _setup = new();
-  private readonly string _constructStack;
-  private bool _ignoreEmpty = false;
+  private readonly List<Action<T>> setup = [];
+  private readonly string constructStack;
+  private bool ignoreEmpty = false;
 
   internal PrefabSetup(string prefabName)
   {
     PrefabName = prefabName;
-    _constructStack = Environment.StackTrace;
+    constructStack = Environment.StackTrace;
   }
 
   void IPrefabSetup.Run(IEnumerable<Thing> things)
@@ -33,10 +33,10 @@ public class PrefabSetup<T> : IPrefabSetup
     {
       if (thing is not T typedThing)
         continue;
-      if (PrefabName != null && PrefabName != thing.PrefabName)
+      if (PrefabName is not null && PrefabName != thing.PrefabName)
         continue;
       any = true;
-      foreach (var setup in _setup)
+      foreach (var setup in setup)
       {
         try
         {
@@ -49,19 +49,19 @@ public class PrefabSetup<T> : IPrefabSetup
         }
       }
     }
-    if (!any && !_ignoreEmpty)
-      Debug.LogWarning($"No prefabs matching {typeof(T)} {PrefabName} for setup at\n{_constructStack}");
+    if (!any && !ignoreEmpty)
+      Debug.LogWarning($"No prefabs matching {typeof(T)} {PrefabName} for setup at\n{constructStack}");
   }
 
   public PrefabSetup<T> IgnoreEmpty()
   {
-    _ignoreEmpty = true;
+    ignoreEmpty = true;
     return this;
   }
 
   public PrefabSetup<T> RunFunc(Action<T> action)
   {
-    this._setup.Add(action);
+    setup.Add(action);
     return this;
   }
 
@@ -122,5 +122,4 @@ public class PrefabSetup<T> : IPrefabSetup
   {
     PrefabUtils.AddToMultiConstructorKit(prefab as Structure, kitName, order);
   }
-
 }

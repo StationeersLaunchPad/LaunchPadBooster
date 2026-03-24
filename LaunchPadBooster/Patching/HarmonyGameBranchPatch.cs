@@ -5,9 +5,9 @@ using System.Linq;
 namespace LaunchPadBooster.Patching;
 
 [AttributeUsage(AttributeTargets.Class | AttributeTargets.Method)]
-public class HarmonyGameBranchPatch : HarmonyConditionalPatch
+public class HarmonyGameBranchPatch(params string[] branches) : HarmonyConditionalPatch
 {
-  public readonly string[] Branches;
+  public readonly string[] Branches = branches;
 
   //Note: the reason for using `public` for the case where the branch is not specified is
   //because when downloading a branch with steamcmd, when you specify `-beta public`, it will download the main branch
@@ -34,11 +34,6 @@ public class HarmonyGameBranchPatch : HarmonyConditionalPatch
 
   public static string CurrentBranch => _currentBranch ??= GetBetaBranchFromAcf() ?? Steamworks.SteamApps.CurrentBetaName ?? "public";
 
-  public override bool CanPatch => this.Branches.Contains(CurrentBranch);
-  public override string Description => $"Current: {CurrentBranch} Branches: [{string.Join(",", this.Branches)}]";
-
-  public HarmonyGameBranchPatch(params string[] branches)
-  {
-    this.Branches = branches;
-  }
+  public override bool CanPatch => Branches.Contains(CurrentBranch);
+  public override string Description => $"Current: {CurrentBranch} Branches: [{string.Join(",", Branches)}]";
 }

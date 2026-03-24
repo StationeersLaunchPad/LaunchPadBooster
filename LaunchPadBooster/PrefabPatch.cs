@@ -7,14 +7,14 @@ namespace LaunchPadBooster;
 
 internal static class PrefabPatch
 {
-  static object _initLock = new();
-  static bool _initialized = false;
+  static readonly object initLock = new();
+  static bool initialized = false;
 
   public static void Initialize()
   {
-    lock (_initLock)
+    lock (initLock)
     {
-      if (_initialized)
+      if (initialized)
         return;
 
       var harmony = new Harmony("LaunchPadBooster.PrefabPatch");
@@ -22,7 +22,7 @@ internal static class PrefabPatch
         ReflectionUtils.Method(() => Prefab.LoadAll()),
         prefix: new HarmonyMethod(ReflectionUtils.Method(() => PatchPrefabs()))
       );
-      _initialized = true;
+      initialized = true;
     }
   }
 

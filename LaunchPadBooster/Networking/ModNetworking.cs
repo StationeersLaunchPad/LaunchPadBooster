@@ -56,7 +56,10 @@ public static class ModNetworking
       try
       {
         var cpanel = typeof(ConfirmationPanel);
-        var argTypes = new Type[] { typeof(string), typeof(string), typeof(string), typeof(UnityAction), typeof(string), typeof(UnityAction), typeof(string), typeof(UnityAction), typeof(bool) };
+        Type[] argTypes = [
+          typeof(string), typeof(string), typeof(string), typeof(UnityAction), typeof(string),
+          typeof(UnityAction), typeof(string), typeof(UnityAction), typeof(bool)
+        ];
         // stable 0.2.5499.24517
         var m1 = cpanel.GetMethod("SetUpPanel", argTypes);
         // beta 0.2.5870.25885
@@ -75,8 +78,8 @@ public static class ModNetworking
         Debug.LogException(ex);
       }
       // fallback to printing to console if neither found
-      ShowConfirmationPanel ??= (_, title, message, _, click, _, _, _, _, _) => ConsoleWindow.PrintError($"{title}: {message}", true);
-
+      ShowConfirmationPanel ??= (_, title, message, _, click, _, _, _, _, _) =>
+        ConsoleWindow.PrintError($"{title}: {message}", true);
 
       initialized = true;
     }
@@ -89,8 +92,8 @@ public static class ModNetworking
       if (MessageTypes != null)
         return;
 
-      MessageTypes = new();
-      MessageTypeToIndex = new();
+      MessageTypes = [];
+      MessageTypeToIndex = [];
       foreach (var mod in Mod.AllMods)
       {
         if (!mod.MultiplayerRequired)
@@ -116,11 +119,7 @@ public static class ModNetworking
     {
       if (!mod.MultiplayerRequired)
         continue;
-      var info = new ModInfoFromServer
-      {
-        ID = mod.ID,
-        Messages = new()
-      };
+      var info = new ModInfoFromServer { ID = mod.ID, Messages = [] };
       foreach (var msg in mod.NetworkMessageTypes)
       {
         info.Messages.Add(new ModNetworkMessageMapping
@@ -141,7 +140,7 @@ public static class ModNetworking
   private static byte serverNetVersion;
   internal static void DeserializeServerModInfo(RocketBinaryReader reader)
   {
-    modsFromServer = new();
+    modsFromServer = [];
     serverNetVersion = 0;
     try
     {
@@ -275,7 +274,7 @@ public static class ModNetworking
   private static byte clientNetVersion;
   internal static void DeserializeClientModInfo(RocketBinaryReader reader)
   {
-    modsFromClient = new();
+    modsFromClient = [];
     clientNetVersion = 0;
     try
     {

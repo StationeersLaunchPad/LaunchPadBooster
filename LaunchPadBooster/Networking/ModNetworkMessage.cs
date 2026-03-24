@@ -4,4 +4,5 @@ namespace LaunchPadBooster.Networking;
 
 public interface IModNetworkMessage;
 
-public abstract class ModNetworkMessage<T> : ProcessedMessage<T>, IModNetworkMessage where T : ModNetworkMessage<T>, new();
+public abstract class ModNetworkMessage<T> : ProcessedMessage<T>, IModNetworkMessage
+  where T : ModNetworkMessage<T>, new();

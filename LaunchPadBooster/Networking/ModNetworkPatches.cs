@@ -12,37 +12,43 @@ namespace LaunchPadBooster.Networking;
 
 static class ModNetworkPatches
 {
-  [HarmonyPatch(typeof(NetworkMessages.VerifyPlayerRequest), nameof(NetworkMessages.VerifyPlayerRequest.Serialize)), HarmonyPostfix]
+  [HarmonyPatch(typeof(NetworkMessages.VerifyPlayerRequest),
+    nameof(NetworkMessages.VerifyPlayerRequest.Serialize)), HarmonyPostfix]
   static void VerifyPlayerRequest_Serialize(RocketBinaryWriter writer)
   {
     ModNetworking.SerializeServerModInfo(writer);
   }
 
-  [HarmonyPatch(typeof(NetworkMessages.VerifyPlayerRequest), nameof(NetworkMessages.VerifyPlayerRequest.Deserialize)), HarmonyPostfix]
+  [HarmonyPatch(typeof(NetworkMessages.VerifyPlayerRequest),
+    nameof(NetworkMessages.VerifyPlayerRequest.Deserialize)), HarmonyPostfix]
   static void VerifyPlayerRequest_Deserialize(RocketBinaryReader reader)
   {
     ModNetworking.DeserializeServerModInfo(reader);
   }
 
-  [HarmonyPatch(typeof(NetworkMessages.VerifyPlayerRequest), nameof(NetworkMessages.VerifyPlayerRequest.Process)), HarmonyPrefix]
+  [HarmonyPatch(typeof(NetworkMessages.VerifyPlayerRequest),
+    nameof(NetworkMessages.VerifyPlayerRequest.Process)), HarmonyPrefix]
   static bool VerifyPlayerRequest_Process(long hostId)
   {
     return !NetworkManager.IsClient || ModNetworking.ValidateModInfoClient();
   }
 
-  [HarmonyPatch(typeof(NetworkMessages.VerifyPlayer), nameof(NetworkMessages.VerifyPlayer.Serialize)), HarmonyPostfix]
+  [HarmonyPatch(typeof(NetworkMessages.VerifyPlayer),
+    nameof(NetworkMessages.VerifyPlayer.Serialize)), HarmonyPostfix]
   static void VerifyPlayer_Serialize(RocketBinaryWriter writer)
   {
     ModNetworking.SerializeClientModInfo(writer);
   }
 
-  [HarmonyPatch(typeof(NetworkMessages.VerifyPlayer), nameof(NetworkMessages.VerifyPlayer.Deserialize)), HarmonyPostfix]
+  [HarmonyPatch(typeof(NetworkMessages.VerifyPlayer),
+    nameof(NetworkMessages.VerifyPlayer.Deserialize)), HarmonyPostfix]
   static void VerifyPlayer_Deserialize(RocketBinaryReader reader)
   {
     ModNetworking.DeserializeClientModInfo(reader);
   }
 
-  [HarmonyPatch(typeof(NetworkMessages.VerifyPlayer), nameof(NetworkMessages.VerifyPlayer.Process)), HarmonyPrefix]
+  [HarmonyPatch(typeof(NetworkMessages.VerifyPlayer),
+    nameof(NetworkMessages.VerifyPlayer.Process)), HarmonyPrefix]
   static bool VerifyPlayer_Process(long hostId, NetworkMessages.VerifyPlayer __instance)
   {
     return !NetworkManager.IsServer || ModNetworking.ValidateModInfoServer(hostId, __instance);
@@ -79,7 +85,8 @@ static class ModNetworkPatches
   }
 
   [HarmonyPatch(typeof(NetworkBase), nameof(NetworkBase.DeserializeReceivedData)), HarmonyTranspiler]
-  static IEnumerable<CodeInstruction> NetworkBase_DeserializeReceivedData(IEnumerable<CodeInstruction> instructions)
+  static IEnumerable<CodeInstruction> NetworkBase_DeserializeReceivedData(
+    IEnumerable<CodeInstruction> instructions)
   {
     /*
     The network client checks message types against a whitelist for messages the client is allowed to send.
@@ -118,7 +125,8 @@ static class ModNetworkCompatibilityPatch
 {
   public static void RunPatch(Harmony harmony)
   {
-    // This is an attempt to maintain compatibility with other mods that patch network handling by bypassing the original implementation
+    // This is an attempt to maintain compatibility with other mods that patch network handling
+    // by bypassing the original implementation
 
     var method = ReflectionUtils.Method(() => NetworkBase.DeserializeReceivedData(default, default));
     var patches = Harmony.GetPatchInfo(method);
@@ -137,7 +145,8 @@ static class ModNetworkCompatibilityPatch
     var matcher = new CodeMatcher(instructions);
 
     // look for set of whitelisted types
-    matcher.MatchStartForward(new CodeInstruction(OpCodes.Newobj, ReflectionUtils.Constructor(() => new HashSet<Type>())));
+    matcher.MatchStartForward(new CodeInstruction(OpCodes.Newobj,
+      ReflectionUtils.Constructor(() => new HashSet<Type>())));
     if (matcher.IsValid)
     {
       matcher.Advance(1);

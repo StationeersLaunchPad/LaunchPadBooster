@@ -10,8 +10,8 @@ namespace LaunchPadBooster.Patching;
 
 class HarmonyConditionalClassProcessor : PatchClassProcessor
 {
-  public HarmonyConditionalClassProcessor(Harmony instance, Type type,
-      bool allowUnannotatedType = false) : base(instance, type, allowUnannotatedType)
+  public HarmonyConditionalClassProcessor(Harmony instance, Type type, bool allowUnannotatedType = false)
+    : base(instance, type, allowUnannotatedType)
   {
     var patchMethods = (IList)typeof(PatchClassProcessor)
         .GetField("patchMethods", BindingFlags.NonPublic | BindingFlags.Instance)?.GetValue(this);

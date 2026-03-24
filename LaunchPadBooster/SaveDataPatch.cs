@@ -8,14 +8,14 @@ namespace LaunchPadBooster;
 
 internal static class SaveDataPatch
 {
-  static object _initLock = new();
-  static bool _initialized = false;
+  static readonly object initLock = new();
+  static bool initialized = false;
 
   public static void Initialize()
   {
-    lock (_initLock)
+    lock (initLock)
     {
-      if (_initialized)
+      if (initialized)
         return;
 
       var harmony = new Harmony("LaunchPadBooster.SaveDataPatch");
@@ -25,7 +25,7 @@ internal static class SaveDataPatch
         prefix: new HarmonyMethod(ReflectionUtils.Method(() => PatchSaveData(ref dummyParam)))
       );
 
-      _initialized = true;
+      initialized = true;
     }
   }
 

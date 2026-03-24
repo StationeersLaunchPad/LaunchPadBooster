@@ -49,10 +49,12 @@ public static class ReflectionUtils
   }
 
   // ReflectionUtils.Field(() => default(MyType).MyField)
-  public static FieldInfo Field<T>(Expression<Func<T>> expr) => (expr.Body as MemberExpression).Member as FieldInfo;
+  public static FieldInfo Field<T>(Expression<Func<T>> expr) =>
+    (expr.Body as MemberExpression).Member as FieldInfo;
 
   // ReflectionUtils.Constructor(() => new MyType());
-  public static ConstructorInfo Constructor<T>(Expression<Func<T>> expr) => (expr.Body as NewExpression).Constructor;
+  public static ConstructorInfo Constructor<T>(Expression<Func<T>> expr) =>
+    (expr.Body as NewExpression).Constructor;
 
   // ReflectionUtils.Operator(() => default(MyType) * default(MyType))
   // ReflectionUtils.Operator(() => (MyType2)default(MyType)) // implicit/explicit cast
@@ -72,7 +74,7 @@ public static class ReflectionUtils
   {
     if (!method.IsVirtual)
       return method;
-    // for virtual methods, we get usually get the reference to the base method, but want the specific implementation
+    // for virtual methods, we get the reference to the base method instead of the specific implementation
     // search the specific type for a matching implementation
     var allMethods = type.GetMethods(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
     return allMethods.First(m => m.GetBaseDefinition() == method.GetBaseDefinition()) ?? method;
