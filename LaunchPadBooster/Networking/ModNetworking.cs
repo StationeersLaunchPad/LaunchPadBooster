@@ -30,12 +30,7 @@ public static class ModNetworking
     string title,
     string message,
     string button1Text,
-    UnityAction button1Click,
-    string button2Text = null,
-    UnityAction button2Click = null,
-    string button3Text = null,
-    UnityAction button3Click = null,
-    bool closeOnEscape = true
+    UnityAction button1Click
   );
   private static ConfirmationPanelDelegate ShowConfirmationPanel;
 
@@ -55,22 +50,18 @@ public static class ModNetworking
       // make ConfirmationPanel delegate manually for stable/beta compatibility
       try
       {
-        var cpanel = typeof(ConfirmationPanel);
-        Type[] argTypes = [
-          typeof(string), typeof(string), typeof(string), typeof(UnityAction), typeof(string),
-          typeof(UnityAction), typeof(string), typeof(UnityAction), typeof(bool)
-        ];
-        // stable 0.2.5499.24517
-        var m1 = cpanel.GetMethod("SetUpPanel", argTypes);
-        // beta 0.2.5870.25885
-        var m2 = cpanel.GetMethod("ShowRaw", argTypes);
-        if (m1 != null)
-          ShowConfirmationPanel = m1.CreateDelegate<ConfirmationPanelDelegate>();
-        else if (m2 != null)
+        if (CompatUtils.TryMakeDelegate<ConfirmationPanelDelegate>(
+            typeof(ConfirmationPanel), "SetUpPanel", out var m1))
         {
-          var m2d = m2.CreateDelegate<ConfirmationPanelDelegate>();
-          ShowConfirmationPanel = (instance, title, message, b1text, b1click, _, _, _, _, _) =>
-            m2d(instance, title, message, Localization.GetInterface(b1text), b1click);
+          // use as-is
+          ShowConfirmationPanel = m1;
+        }
+        else if (CompatUtils.TryMakeDelegate<ConfirmationPanelDelegate>(
+          typeof(ConfirmationPanel), "ShowRaw", out var m2))
+        {
+          // localize b1text
+          ShowConfirmationPanel = (instance, title, message, b1text, b1click) =>
+            m2(instance, title, message, Localization.GetInterface(b1text), b1click);
         }
       }
       catch (Exception ex)
@@ -78,7 +69,7 @@ public static class ModNetworking
         Debug.LogException(ex);
       }
       // fallback to printing to console if neither found
-      ShowConfirmationPanel ??= (_, title, message, _, click, _, _, _, _, _) =>
+      ShowConfirmationPanel ??= (_, title, message, _, click) =>
         ConsoleWindow.PrintError($"{title}: {message}", true);
 
       initialized = true;
