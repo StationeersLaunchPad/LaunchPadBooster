@@ -45,6 +45,7 @@
     <GameReference Include="Assembly-CSharp" />
 
     <GameReference Include="Facepunch.Steamworks.Win64" />
+    <GameReference Include="LZ4" />
     <GameReference Include="UniTask" />
     <GameReference Include="UnityEngine.AnimationModule" />
     <GameReference Include="UnityEngine.CoreModule" />
