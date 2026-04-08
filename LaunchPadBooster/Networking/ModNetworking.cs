@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Reflection;
 using System.Text;
 using Assets.Scripts;
 using Assets.Scripts.Networking;
@@ -34,12 +35,45 @@ public static class ModNetworking
   );
   private static ConfirmationPanelDelegate ShowConfirmationPanel;
 
+  private const int NetworkBufferSize = 65536;
+
+  private static void ResizeNetworkBuffers()
+  {
+    try
+    {
+      var flags = BindingFlags.Static | BindingFlags.NonPublic;
+      var managerType = typeof(NetworkManager);
+
+      var bufferField = managerType.GetField("Buffer", flags);
+      if (bufferField != null)
+        bufferField.SetValue(null, new byte[NetworkBufferSize]);
+      else
+        Debug.LogError("[LaunchPadBooster] Could not find NetworkManager.Buffer field");
+
+      var writerField = managerType.GetField("_messageWriter", flags);
+      if (writerField != null)
+      {
+        var oldWriter = (RocketBinaryWriter)writerField.GetValue(null);
+        writerField.SetValue(null, new RocketBinaryWriter(NetworkBufferSize));
+        oldWriter?.Dispose();
+      }
+      else
+        Debug.LogError("[LaunchPadBooster] Could not find NetworkManager._messageWriter field");
+    }
+    catch (Exception ex)
+    {
+      Debug.LogError($"[LaunchPadBooster] Failed to resize network buffers: {ex}");
+    }
+  }
+
   internal static void Initialize()
   {
     lock (initLock)
     {
       if (initialized)
         return;
+
+      ResizeNetworkBuffers();
 
       var harmony = new Harmony("LaunchPadBooster.Networking");
       harmony.CreateClassProcessor(typeof(ModNetworkPatches), true).Patch();
