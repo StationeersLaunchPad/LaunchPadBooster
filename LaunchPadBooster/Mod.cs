@@ -38,7 +38,9 @@ public sealed class Mod
     }
   }
 
-  [Obsolete("Use Mod.Networking.VersionValidator instead", true)]
+  [Obsolete("""
+    Use Mod.Networking.VersionValidator instead, or implement IJoinValidator for custom join validation
+  """, true)]
   public void SetVersionCheck(Func<string, bool> versionCheck)
   {
     Networking.VersionValidator = new LambdaVersionValidator(versionCheck);
@@ -56,7 +58,10 @@ public sealed class Mod
     SaveDataTypes.Add(typeof(T));
   }
 
-  [Obsolete("Use Mod.Networking.RegisterLegacyMessage")]
+  [Obsolete("""
+    Implement INetworkMessage and use Mod.Networking.RegisterMessage instead.
+    Use Mod.Networking.RegisterLegacyMessage to use the legacy mod messsage class for now
+  """, true)]
   public void RegisterNetworkMessage<T>() where T : ModNetworkMessage<T>, new()
   {
     Networking.RegisterLegacyMessage<T>();
