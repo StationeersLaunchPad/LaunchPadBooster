@@ -4,6 +4,8 @@ A utility library for easier development of Stationeers mods.
 
 This library is automatically included in StationeersLaunchPad starting in v0.2.0.
 
+See the [StationeersLaunchPad docs site](https://stationeerslaunchpad.github.io/docs/) for more info on writing mods.
+
 ## Usage
 
 Most features are accessed through the `Mod` class. Your mod should create one static instance of this and use it for registering things to the game.
@@ -55,45 +57,103 @@ MOD.AddSaveDataType<MyCustomSaveData>();
 
 ### Network Messages
 
-To add custom network messages, extend `ModNetworkMessage`.
+To add custom network messages, implement the `INetworkMessage` or `INetworkRPC` interface.
 ```cs
-public class MyCustomMessage : ModNetworkMessage<MyCustomMessage>
+public class MyCustomMessage : INetworkMessage
 {
   // must have a default constructor
   public MyCustomMessage() { }
 
-  public override void Serialize(RocketBinaryWriter writer)
-  {
-    // write data
-  }
+  // write data
+  public void Serialize(RocketBinaryWriter writer) { }
 
-  public override void Deserialize(RocketBinaryReader reader)
-  {
-    // read data
-  }
+  // read data
+  public void Deserialize(RocketBinaryReader reader) { }
 
-  public override void Process(long hostId)
-  {
-    // handle message
-  }
+  // handle message
+  public void Process(long clientId) { }
+}
+
+public class MyCustomRPC : INetworkRPC
+{
+  // must have a default constructor
+  public MyCustomRPC() { }
+
+  // write argument data on caller
+  public void SerializeCall(RocketBinaryWriter writer) { }
+  // read argument data on callee
+  public void DeserializeCall(RocketBinaryReader reader) { }
+  // asynchronously process on callee
+  public UniTask ProcessCall(long clientId) { }
+  // write result data on callee
+  public void DeserializeResult(RocketBinaryReader reader) { }
+  // read result data on caller
+  public void SerializeResult(RocketBinaryWriter writer) { }
 }
 ```
 
 These message types must be registered with your mod.
 ```cs
-MOD.RegisterNetworkMessage<MyCustomMessage>();
+MOD.Networking.RegisterMessage<MyCustomMessage>();
+MOD.Networking.RegisterRPC<MyCustomRPC>();
 ```
 
 ### Multiplayer
 
 If your mod adds prefabs or network messages, it will automatically be marked as required for multiplayer. If you don't have either of these, but still make changes that will require both server and client to have the mod installed, you can manually mark it as required.
 ```cs
-MOD.SetMultiplayerRequired();
+MOD.Networking.Required = true;
 ```
 
-On connection, the client and server will check that the required mods are present and compatible. The default check requires the version strings to match exactly. If you want to allow a looser version requirement, you can set the version check function.
+On connection, the client and server will check that the required mods are present and compatible. The default check requires the version strings to match exactly. Mods can provide a custom version check by implementing the `IVersionValidator` interface.
 ```cs
-MOD.SetVersionCheck(version => version.StartsWith("0.2."));
+public class MyMod : MonoBehaviour, IVersionValidator
+{
+  public static readonly Mod MOD = new("MyMod", "1.0.0");
+  public void OnLoaded(ModData modData)
+  {
+    MOD.Networking.VersionValidator = this;
+  }
+
+  public bool ValidateVersion(string version) => version.StartsWith("1.0.");
+}
+```
+
+Mods can also add custom validation on join by implementing the `IJoinValidator` interface. The custom join validation will be run on both client and server before the join process is completed.
+```cs
+public class MyMod : MonoBehaviour, IJoinValidator
+{
+  public static readonly Mod MOD = new("MyMod", "1.0.0");
+  public static ConfigEntry<int> MyConfigValue;
+
+  public void OnLoaded(ConfigFile config)
+  {
+    MyConfigValue = config.Bind(new ConfigDefinition("MySection", "MyKey"), 0);
+    MOD.Networking.JoinValidator = this;
+  }
+
+  public void SerializeJoinValidate(RocketBinaryWriter writer)
+  {
+    // write data for validator
+    writer.WriteInt32(MyConfigValue.Value);
+  }
+
+  public bool ProcessJoinValidate(RocketBinaryReader reader, out string error)
+  {
+    // read data and validate;
+    var remoteValue = reader.ReadInt32();
+    if (remoteValue != MyConfigValue.Value)
+    {
+      // return false and set the error message to reject the connection
+      // a null error will display a default "join validation failed" message
+      error = $"Config value mismatch: {remoteValue} != {MyConfigValue.Value}";
+      return false;
+    }
+    // if validation succeeds, set the error to null (ignored) and return true
+    error = null;
+    return true;
+  }
+}
 ```
 
 ### Utilities
