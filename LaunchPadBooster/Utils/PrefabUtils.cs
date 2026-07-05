@@ -101,7 +101,7 @@ public static class PrefabUtils
         itemKit.Constructables.Insert(insertIndex, structure);
       }
 
-      structure.BuildStates[0].Tool.ToolExit = tool;
+      structure.BuildStates[0].Tool.ToolEntry = tool;
     }
   }
 
