@@ -105,6 +105,17 @@ public sealed class Mod
 
   public PrefabSetup<Thing> SetupPrefabs(string name = null) => SetupPrefabs<Thing>(name);
   
+  internal static void RemoveOwnedBy(Assembly assembly)
+  {
+    Mod[] mods;
+
+    lock (allLock)
+      mods = AllMods.Where(mod => mod.OwnerAssembly == assembly).ToArray();
+
+    foreach (var mod in mods)
+      mod.Remove();
+  }
+  
   internal void Remove()
   {
     RemovePrefabs();
