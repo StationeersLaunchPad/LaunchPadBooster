@@ -78,6 +78,15 @@ public sealed class Mod
     Prefabs.AddRange(thingPrefabs);
   }
 
+  public void RemovePrefabs()
+  {
+    Prefabs.Clear();
+    Setups.Clear();
+
+    if (Networking is ModNetworking networking)
+      networking.HasPrefabs = false;
+  }
+  
   public PrefabSetup<T> SetupPrefabs<T>(string name = null)
   {
     var setup = new PrefabSetup<T>(name);
