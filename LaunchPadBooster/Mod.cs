@@ -105,7 +105,7 @@ public sealed class Mod
 
   public PrefabSetup<Thing> SetupPrefabs(string name = null) => SetupPrefabs<Thing>(name);
   
-  internal static void RemoveOwnedBy(Assembly assembly)
+  public  static void RemoveOwnedBy(Assembly assembly)
   {
     Mod[] mods;
 
