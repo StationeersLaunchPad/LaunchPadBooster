@@ -103,6 +103,20 @@ public static class PrefabUtils
 
       structure.BuildStates[0].Tool.ToolExit = tool;
     }
+    
+    public void RemoveFromMultiConstructorKit(string kitName)
+    {
+      if (!CanSetBuildTool(structure, kitName, 0, out _, out var tool))
+        return;
+
+      if (tool is not MultiConstructor itemKit || itemKit == null)
+        return;
+
+      itemKit.Constructables.Remove(structure);
+
+      if (structure.BuildStates[0].Tool.ToolExit == tool)
+        structure.BuildStates[0].Tool.ToolExit = null;
+    }
   }
 
   // This should only be used prior to prefab load in order to set references
