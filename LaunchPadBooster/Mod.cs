@@ -58,6 +58,11 @@ public sealed class Mod
     SaveDataTypes.Add(typeof(T));
   }
 
+  public void RemoveSaveDataTypes()
+  {
+    SaveDataTypes.Clear();
+  }
+  
   [Obsolete("""
     Implement INetworkMessage and use Mod.Networking.RegisterMessage instead.
     Use Mod.Networking.RegisterLegacyMessage to use the legacy mod messsage class for now
