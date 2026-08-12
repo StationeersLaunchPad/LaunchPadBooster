@@ -24,7 +24,14 @@ public sealed class Mod
   internal readonly List<Type> SaveDataTypes = [];
 
   private ModNetworking _networking;
-  public IModNetworking Networking => _networking ??= new ModNetworking(this);
+  public IModNetworking Networking
+  {
+    get
+    {
+      EnsureRegistered();
+      return _networking ??= new ModNetworking(this);
+    }
+  }
 
   public Mod(string name, string version)
   {
@@ -39,6 +46,18 @@ public sealed class Mod
     }
   }
 
+  private void EnsureRegistered()
+  {
+    lock (allLock)
+    {
+      if (!ModsByHash.ContainsKey(Hash))
+        ModsByHash.Add(Hash, this);
+
+      if (!AllMods.Contains(this))
+        AllMods.Add(this);
+    }
+  }
+  
   [Obsolete("""
     Use Mod.Networking.VersionValidator instead, or implement IJoinValidator for custom join validation
   """, true)]
@@ -55,6 +74,8 @@ public sealed class Mod
 
   public void AddSaveDataType<T>()
   {
+    EnsureRegistered();
+    
     SaveDataPatch.Initialize();
     SaveDataTypes.Add(typeof(T));
   }
@@ -81,6 +102,8 @@ public sealed class Mod
     if (thingPrefabs.Count == 0)
       return;
 
+    EnsureRegistered();
+    
     (Networking as ModNetworking).HasPrefabs = true;
 
     PrefabPatch.Initialize();
@@ -104,6 +127,8 @@ public sealed class Mod
 
   public PrefabSetup<T> SetupPrefabs<T>(string name = null)
   {
+    EnsureRegistered();
+    
     var setup = new PrefabSetup<T>(name);
     Setups.Add(setup);
     return setup;
