@@ -43,4 +43,22 @@ internal class TypeRegistry<T>
 
   internal bool CtorFor(TypeID id, out Ctor ctor) => ctors.TryGetValue(id, out ctor);
   internal bool TypeFor(TypeID id, out Type type) => types.TryGetValue(id, out type);
+  
+  internal void UnregisterMod(Mod mod)
+  {
+    var ids = new List<TypeID>();
+
+    foreach (var id in types.Keys)
+      if (id.ModHash == mod.Hash)
+        ids.Add(id);
+
+    foreach (var id in ids)
+    {
+      if (types.Remove(id, out var type))
+        typeIDs.Remove(type);
+
+      ctors.Remove(id);
+    }
+  }
+  
 }
