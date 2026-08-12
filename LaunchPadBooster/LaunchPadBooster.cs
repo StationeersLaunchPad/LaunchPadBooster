@@ -4,5 +4,5 @@ public static class LaunchPadBooster
 {
   public const string NAME = "LaunchPadBooster";
   public const string GUID = "launchpad.booster";
-  public const string VERSION = "0.2.0";
+  public const string VERSION = "0.2.1";
 }
