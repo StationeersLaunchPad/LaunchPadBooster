@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Reflection;
 using System.Linq;
 using Assets.Scripts.Objects;
 using LaunchPadBooster.Networking;
@@ -15,6 +16,7 @@ public sealed class Mod
 
   public readonly ModID ID;
   internal readonly int Hash;
+  internal readonly Assembly OwnerAssembly;
 
   [Obsolete("Use Mod.Networking.Required instead", true)]
   public bool MultiplayerRequired => Networking.Required;
@@ -27,6 +29,8 @@ public sealed class Mod
 
   public Mod(string name, string version)
   {
+    OwnerAssembly = Assembly.GetCallingAssembly();
+    
     ID = new(name, version);
 
     Hash = Animator.StringToHash(name);
