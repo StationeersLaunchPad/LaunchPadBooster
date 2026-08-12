@@ -30,9 +30,6 @@ internal partial class ModNetworking : IModNetworking
     messageRegistry.UnregisterMod(mod);
     rpcRegistry.UnregisterMod(mod);
     legacyRegistry.UnregisterMod(mod);
-    
-    Instances.Remove(this);
-    InstancesByHash.Remove(mod.Hash);
   }
   
   public bool Required

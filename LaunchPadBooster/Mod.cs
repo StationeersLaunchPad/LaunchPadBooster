@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Reflection;
 using System.Linq;
 using Assets.Scripts.Objects;
 using LaunchPadBooster.Networking;
@@ -16,7 +15,6 @@ public sealed class Mod
 
   public readonly ModID ID;
   internal readonly int Hash;
-  internal readonly Assembly OwnerAssembly;
 
   [Obsolete("Use Mod.Networking.Required instead", true)]
   public bool MultiplayerRequired => Networking.Required;
@@ -25,12 +23,11 @@ public sealed class Mod
   internal readonly List<IPrefabSetup> Setups = [];
   internal readonly List<Type> SaveDataTypes = [];
 
-  public IModNetworking Networking => field ??= new ModNetworking(this);
+  private ModNetworking _networking;
+  public IModNetworking Networking => _networking ??= new ModNetworking(this);
 
   public Mod(string name, string version)
   {
-    OwnerAssembly = Assembly.GetCallingAssembly();
-    
     ID = new(name, version);
 
     Hash = Animator.StringToHash(name);
@@ -66,7 +63,7 @@ public sealed class Mod
   {
     SaveDataTypes.Clear();
   }
-  
+
   [Obsolete("""
     Implement INetworkMessage and use Mod.Networking.RegisterMessage instead.
     Use Mod.Networking.RegisterLegacyMessage to use the legacy mod messsage class for now
@@ -80,9 +77,12 @@ public sealed class Mod
   {
     var thingPrefabs =
       prefabs.Select(prefab => prefab.GetComponent<Thing>()).Where(thing => thing != null).ToList();
+
     if (thingPrefabs.Count == 0)
       return;
+
     (Networking as ModNetworking).HasPrefabs = true;
+
     PrefabPatch.Initialize();
     Prefabs.AddRange(thingPrefabs);
   }
@@ -92,10 +92,16 @@ public sealed class Mod
     Prefabs.Clear();
     Setups.Clear();
 
-    if (Networking is ModNetworking networking)
+    if (ModNetworking.InstancesByHash.TryGetValue(Hash, out var networking))
       networking.HasPrefabs = false;
   }
-  
+
+  public void RemoveNetworkRegistrations()
+  {
+    if (ModNetworking.InstancesByHash.TryGetValue(Hash, out var networking))
+      networking.RemoveRegistrations();
+  }
+
   public PrefabSetup<T> SetupPrefabs<T>(string name = null)
   {
     var setup = new PrefabSetup<T>(name);
@@ -104,26 +110,22 @@ public sealed class Mod
   }
 
   public PrefabSetup<Thing> SetupPrefabs(string name = null) => SetupPrefabs<Thing>(name);
-  
-  public  static void RemoveOwnedBy(Assembly assembly)
+
+  public void Remove()
   {
-    Mod[] mods;
-
-    lock (allLock)
-      mods = AllMods.Where(mod => mod.OwnerAssembly == assembly).ToArray();
-
-    foreach (var mod in mods)
-      mod.Remove();
-  }
-  
-  internal void Remove()
-  {
-    RemovePrefabs();
-    RemoveSaveDataTypes();
-
     if (ModNetworking.InstancesByHash.TryGetValue(Hash, out var networking))
-      networking.RemoveRegistrations();
+    {
+      ModNetworking.Instances.Remove(networking);
+      ModNetworking.InstancesByHash.Remove(Hash);
+    }
 
+    if (_networking != null)
+    {
+      ModNetworking.Instances.Remove(_networking);
+      ModNetworking.InstancesByHash.Remove(Hash);
+      _networking = null;
+    }
+    
     lock (allLock)
     {
       ModsByHash.Remove(Hash);
