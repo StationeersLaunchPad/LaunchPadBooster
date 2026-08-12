@@ -100,6 +100,21 @@ public sealed class Mod
   }
 
   public PrefabSetup<Thing> SetupPrefabs(string name = null) => SetupPrefabs<Thing>(name);
+  
+  internal void Remove()
+  {
+    RemovePrefabs();
+    RemoveSaveDataTypes();
+
+    if (ModNetworking.InstancesByHash.TryGetValue(Hash, out var networking))
+      networking.RemoveRegistrations();
+
+    lock (allLock)
+    {
+      ModsByHash.Remove(Hash);
+      AllMods.Remove(this);
+    }
+  }
 }
 
 public readonly struct ModID(string name, string version)
