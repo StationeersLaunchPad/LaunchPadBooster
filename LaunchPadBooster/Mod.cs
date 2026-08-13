@@ -90,6 +90,7 @@ public sealed class Mod
   
   public LogicPropertyInfo AddLogicType(string name, LogicNetworkType networkType = LogicNetworkType.Double)
   {
+    LogicRegistry.Initialize();
     return LogicRegistry.Add(this, name, networkType);
   }
 

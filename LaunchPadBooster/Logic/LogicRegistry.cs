@@ -2,11 +2,36 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Assets.Scripts.Objects.Motherboards;
+using HarmonyLib;
+using LaunchPadBooster.Utils;
+using Assets.Scripts.Objects;
 
 namespace LaunchPadBooster.Logic;
 
 internal static class LogicRegistry
 {
+    private static readonly object InitLock = new();
+    private static bool _initialized;
+    
+    internal static void Initialize()
+    {
+        lock (InitLock)
+        {
+            if (_initialized)
+                return;
+
+            var harmony = new Harmony("LaunchPadBooster.LogicRegistry");
+
+            harmony.Patch(
+                ReflectionUtils.Method(() => Prefab.LoadAll()),
+                prefix: new HarmonyMethod(
+                    ReflectionUtils.Method(() => FinalizeRegistry()))
+            );
+
+            _initialized = true;
+        }
+    }
+    
     private sealed class Entry
     {
         public LogicPropertyInfo Property { get; }
