@@ -101,7 +101,7 @@ public static class PrefabUtils
         itemKit.Constructables.Insert(insertIndex, structure);
       }
 
-      structure.BuildStates[0].Tool.ToolExit = tool;
+      structure.BuildStates[0].Tool.ToolEntry = tool;
     }
     
     public void RemoveFromMultiConstructorKit(string kitName)
@@ -114,8 +114,8 @@ public static class PrefabUtils
 
       itemKit.Constructables.Remove(structure);
 
-      if (structure.BuildStates[0].Tool.ToolExit == tool)
-        structure.BuildStates[0].Tool.ToolExit = null;
+      if (structure.BuildStates[0].Tool.ToolEntry == tool)
+        structure.BuildStates[0].Tool.ToolEntry = null;
     }
   }
 
