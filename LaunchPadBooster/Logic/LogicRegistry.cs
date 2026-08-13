@@ -13,6 +13,8 @@ internal static class LogicRegistry
     private static readonly object InitLock = new();
     private static bool _initialized;
     
+    private static readonly Dictionary<LogicType, LogicPropertyInfo> ByLogicType = new();
+    
     internal static void Initialize()
     {
         lock (InitLock)
@@ -111,8 +113,16 @@ internal static class LogicRegistry
                      .OrderBy(x => x.Property.Name, StringComparer.Ordinal))
         {
             entry.Property.LogicType = (LogicType)nextId++;
+            ByLogicType.Add(entry.Property.LogicType, entry.Property);
         }
 
         _finalized = true;
+    }
+
+    internal static bool TryGet(
+        LogicType logicType,
+        out LogicPropertyInfo property)
+    {
+        return ByLogicType.TryGetValue(logicType, out property);
     }
 }
