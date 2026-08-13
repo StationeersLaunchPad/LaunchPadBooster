@@ -65,6 +65,20 @@ internal static class LogicRegistry
                 )
             );
             
+            harmony.Patch(
+                AccessTools.Method(
+                    typeof(Localization),
+                    nameof(Localization.ParseHelpText),
+                    new[] { typeof(string) }
+                ),
+                prefix: new HarmonyMethod(
+                    AccessTools.Method(
+                        typeof(LogicStationpediaPatch),
+                        nameof(LogicStationpediaPatch.ParseHelpText)
+                    )
+                )
+            );
+            
             _initialized = true;
         }
     }
