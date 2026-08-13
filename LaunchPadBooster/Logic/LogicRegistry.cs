@@ -5,6 +5,7 @@ using Assets.Scripts.Objects.Motherboards;
 using HarmonyLib;
 using LaunchPadBooster.Utils;
 using Assets.Scripts.Objects;
+using Assets.Scripts.Objects.Pipes;
 using Assets.Scripts;
 
 namespace LaunchPadBooster.Logic;
@@ -54,6 +55,16 @@ internal static class LogicRegistry
                 )
             );
 
+            harmony.Patch(
+                AccessTools.Method(typeof(Localization), "ReplaceCommands"),
+                postfix: new HarmonyMethod(
+                    AccessTools.Method(
+                        typeof(LogicIc10Patch),
+                        nameof(LogicIc10Patch.FormatLogicTypes)
+                    )
+                )
+            );
+            
             _initialized = true;
         }
     }
@@ -70,6 +81,8 @@ internal static class LogicRegistry
     }
 
     private static readonly Dictionary<string, Entry> Entries = new(StringComparer.Ordinal);
+
+    internal static IEnumerable<LogicPropertyInfo> Properties => Entries.Values.Select(x => x.Property);
 
     private static bool _finalized;
     
@@ -140,6 +153,10 @@ internal static class LogicRegistry
             ByLogicType.Add(entry.Property.LogicType, entry.Property);
         }
 
+        Logicable.LogicTypes = Logicable.LogicTypes
+            .Concat(Entries.Values.Select(x => x.Property.LogicType))
+            .ToArray();
+        
         _finalized = true;
     }
 
@@ -163,4 +180,5 @@ internal static class LogicRegistry
         property = null;
         return false;
     }
+    
 }

@@ -1,4 +1,5 @@
 using Assets.Scripts.Objects.Motherboards;
+using System.Text.RegularExpressions;
 
 namespace LaunchPadBooster.Logic;
 
@@ -13,5 +14,17 @@ internal static class LogicIc10Patch
 
         __result = property.LogicType;
         return false;
+    }
+    
+    internal static void FormatLogicTypes(ref string __0)
+    {
+        foreach (var property in LogicRegistry.Properties)
+        {
+            __0 = Regex.Replace(
+                __0,
+                $@"\b{Regex.Escape(property.Name)}\b",
+                $"<color=orange>{property.Name}</color>"
+            );
+        }
     }
 }
