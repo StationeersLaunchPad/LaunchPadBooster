@@ -23,6 +23,19 @@ internal static class LogicStationpediaPatch
         if (!LogicRegistry.TryGet((LogicType)id, out var property))
             return true;
 
+        __result =
+            $"<link=LogicType{property.Name}><color=orange>{property.Name}</color></link>";
+
+        return false;
+    }
+    
+    internal static bool GetLogicDescription(
+        LogicType __0,
+        ref string __result)
+    {
+        if (!LogicRegistry.TryGet(__0, out var property))
+            return true;
+
         __result = property.Name;
         return false;
     }
