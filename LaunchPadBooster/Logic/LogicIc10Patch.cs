@@ -5,10 +5,10 @@ namespace LaunchPadBooster.Logic;
 internal static class LogicIc10Patch
 {
     internal static bool GetLogicType(
-        string value,
+        string __0,
         ref LogicType __result)
     {
-        if (!LogicRegistry.TryGet(value, out var property))
+        if (!LogicRegistry.TryGet(__0, out var property))
             return true;
 
         __result = property.LogicType;
