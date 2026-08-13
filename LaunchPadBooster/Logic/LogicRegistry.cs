@@ -157,6 +157,8 @@ internal static class LogicRegistry
             .Concat(Entries.Values.Select(x => x.Property.LogicType))
             .ToArray();
         
+        ExtendEnumCollection();
+        
         _finalized = true;
     }
 
@@ -181,4 +183,46 @@ internal static class LogicRegistry
         return false;
     }
     
+    private static void ExtendEnumCollection()
+    {
+        var properties = Entries.Values
+            .OrderBy(x => x.Property.Name, StringComparer.Ordinal)
+            .Select(x => x.Property)
+            .ToArray();
+
+        var collection = EnumCollections.LogicTypes;
+
+        var values = collection.Values
+            .Concat(properties.Select(x => x.LogicType))
+            .ToArray();
+
+        var names = collection.Names
+            .Concat(properties.Select(x => x.Name))
+            .ToArray();
+
+        var longestName = names
+            .OrderByDescending(x => x.Length)
+            .FirstOrDefault() ?? string.Empty;
+
+        var paddedNames = names
+            .Select(x => x.PadRight(longestName.Length))
+            .ToArray();
+
+        collection.Values = values;
+        collection.ValuesAsInts = values
+            .Select(x => (ushort)x)
+            .ToArray();
+
+        AccessTools.Field(collection.GetType(), "Names")
+            .SetValue(collection, names);
+
+        AccessTools.Field(collection.GetType(), "PaddedNames")
+            .SetValue(collection, paddedNames);
+
+        AccessTools.Field(collection.GetType(), "LongestName")
+            .SetValue(collection, longestName);
+
+        AccessTools.Field(collection.GetType(), "<Length>k__BackingField")
+            .SetValue(collection, values.Length);
+    }
 }
