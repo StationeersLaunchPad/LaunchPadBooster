@@ -5,6 +5,7 @@ using Assets.Scripts.Objects.Motherboards;
 using HarmonyLib;
 using LaunchPadBooster.Utils;
 using Assets.Scripts.Objects;
+using Assets.Scripts;
 
 namespace LaunchPadBooster.Logic;
 
@@ -28,6 +29,16 @@ internal static class LogicRegistry
                 ReflectionUtils.Method(() => Prefab.LoadAll()),
                 prefix: new HarmonyMethod(
                     ReflectionUtils.Method(() => FinalizeRegistry()))
+            );
+            
+            harmony.Patch(
+                AccessTools.Method(typeof(Network), "GetDataTypeForNetworkSend"),
+                prefix: new HarmonyMethod(
+                    AccessTools.Method(
+                        typeof(LogicNetworkPatch),
+                        nameof(LogicNetworkPatch.GetDataTypeForNetworkSend)
+                    )
+                )
             );
 
             _initialized = true;

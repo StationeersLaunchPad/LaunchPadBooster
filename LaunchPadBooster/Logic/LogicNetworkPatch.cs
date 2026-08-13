@@ -8,7 +8,7 @@ internal static class LogicNetworkPatch
 {
     [HarmonyPrefix]
     [HarmonyPatch(typeof(Network), "GetDataTypeForNetworkSend")]
-    private static bool GetDataTypeForNetworkSend(
+    internal static bool GetDataTypeForNetworkSend(
         LogicType logicType,
         ref byte __result)
     {
