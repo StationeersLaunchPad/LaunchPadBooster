@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
+using Assets.Scripts.Objects.Motherboards;
 
 namespace LaunchPadBooster.Logic;
 
@@ -18,11 +20,17 @@ internal static class LogicRegistry
 
     private static readonly Dictionary<string, Entry> Entries = new(StringComparer.Ordinal);
 
+    private static bool _finalized;
+    
     internal static LogicPropertyInfo Add(
         Mod mod,
         string name,
         LogicNetworkType networkType)
     {
+        if (_finalized) // finalized guard
+            throw new InvalidOperationException(
+                "Logic types cannot be modified after finalization.");
+        
         if (Entries.TryGetValue(name, out var entry))
         {
             if (entry.Property.NetworkType != networkType)
@@ -45,6 +53,10 @@ internal static class LogicRegistry
 
     internal static bool Remove(Mod mod, LogicPropertyInfo property)
     {
+        if (_finalized) // finalized guard
+            throw new InvalidOperationException(
+                "Logic types cannot be modified after finalization.");
+        
         if (!Entries.TryGetValue(property.Name, out var entry))
             return false;
 
@@ -58,5 +70,24 @@ internal static class LogicRegistry
             Entries.Remove(property.Name);
 
         return true;
+    }
+    
+    internal static void FinalizeRegistry()
+    {
+        if (_finalized)
+            return;
+
+        ushort nextId = (ushort)(
+            Enum.GetValues(typeof(LogicType))
+                .Cast<LogicType>()
+                .Max(x => (ushort)x) + 1);
+
+        foreach (var entry in Entries.Values
+                     .OrderBy(x => x.Property.Name, StringComparer.Ordinal))
+        {
+            entry.Property.LogicType = (LogicType)nextId++;
+        }
+
+        _finalized = true;
     }
 }
