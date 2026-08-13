@@ -40,6 +40,19 @@ internal static class LogicRegistry
                     )
                 )
             );
+            
+            harmony.Patch(
+                AccessTools.Method(
+                    AccessTools.TypeByName("_Operation"),
+                    "_GetLogicType"
+                ),
+                prefix: new HarmonyMethod(
+                    AccessTools.Method(
+                        typeof(LogicIc10Patch),
+                        nameof(LogicIc10Patch.GetLogicType)
+                    )
+                )
+            );
 
             _initialized = true;
         }
@@ -135,5 +148,19 @@ internal static class LogicRegistry
         out LogicPropertyInfo property)
     {
         return ByLogicType.TryGetValue(logicType, out property);
+    }
+    
+    internal static bool TryGet(
+        string name,
+        out LogicPropertyInfo property)
+    {
+        if (Entries.TryGetValue(name, out var entry))
+        {
+            property = entry.Property;
+            return true;
+        }
+
+        property = null;
+        return false;
     }
 }
