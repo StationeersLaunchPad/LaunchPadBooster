@@ -2,7 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Assets.Scripts.Objects;
-using LaunchPadBooster.Networking;
+using LaunchPadBooster.Networking;    
+using LaunchPadBooster.Logic;
 using UnityEngine;
 
 namespace LaunchPadBooster;
@@ -86,6 +87,16 @@ public sealed class Mod
   }
 
   public PrefabSetup<Thing> SetupPrefabs(string name = null) => SetupPrefabs<Thing>(name);
+  
+  public LogicPropertyInfo AddLogicType(string name, LogicNetworkType networkType = LogicNetworkType.Double)
+  {
+    return LogicRegistry.Add(this, name, networkType);
+  }
+
+  public bool RemoveLogicType(LogicPropertyInfo property)
+  {
+    return LogicRegistry.Remove(this, property);
+  }
 }
 
 public readonly struct ModID(string name, string version)
