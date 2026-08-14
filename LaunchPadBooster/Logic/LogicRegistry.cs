@@ -1,13 +1,13 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Assets.Scripts;
+using Assets.Scripts.Objects;
+using Assets.Scripts.Objects.Electrical;
 using Assets.Scripts.Objects.Motherboards;
+using Assets.Scripts.Objects.Pipes;
 using HarmonyLib;
 using LaunchPadBooster.Utils;
-using Assets.Scripts.Objects;
-using Assets.Scripts.Objects.Pipes;
-using Assets.Scripts;
-using Assets.Scripts.Objects.Electrical;
 
 namespace LaunchPadBooster.Logic;
 
@@ -15,9 +15,9 @@ internal static class LogicRegistry
 {
     private static readonly object InitLock = new();
     private static bool _initialized;
-    
+
     private static readonly Dictionary<LogicType, LogicPropertyInfo> ByLogicType = new();
-    
+
     internal static void Initialize()
     {
         lock (InitLock)
@@ -32,7 +32,7 @@ internal static class LogicRegistry
                 prefix: new HarmonyMethod(
                     ReflectionUtils.Method(() => FinalizeRegistry()))
             );
-            
+
             harmony.Patch(
                 AccessTools.Method(typeof(Network), "GetDataTypeForNetworkSend"),
                 prefix: new HarmonyMethod(
@@ -42,11 +42,13 @@ internal static class LogicRegistry
                     )
                 )
             );
-            
+
+            var operationType = AccessTools.Inner(typeof(ProgrammableChip), "_Operation");
+
             harmony.Patch(
                 AccessTools.Method(
-                    AccessTools.TypeByName("_Operation"),
-                    "_GetLogicType" 
+                    operationType,
+                    "_GetLogicType"
                 ),
                 prefix: new HarmonyMethod(
                     AccessTools.Method(
@@ -56,16 +58,6 @@ internal static class LogicRegistry
                 )
             );
 
-            harmony.Patch(
-                AccessTools.Method(typeof(Localization), "ReplaceCommands"),
-                postfix: new HarmonyMethod(
-                    AccessTools.Method(
-                        typeof(LogicIc10Patch),
-                        nameof(LogicIc10Patch.FormatLogicTypes)
-                    )
-                )
-            );
-            
             harmony.Patch(
                 AccessTools.Method(
                     typeof(Localization),
@@ -79,25 +71,9 @@ internal static class LogicRegistry
                     )
                 )
             );
-            
-            harmony.Patch(
-                AccessTools.Method(
-                    typeof(LogicBase),
-                    "GetLogicDescription",
-                    new[] { typeof(LogicType) }
-                ),
-                prefix: new HarmonyMethod(
-                    AccessTools.Method(
-                        typeof(LogicStationpediaPatch),
-                        nameof(LogicStationpediaPatch.GetLogicDescription)
-                    )
-                )
-            );
-            
-            var operationType = AccessTools.Inner(typeof(ProgrammableChip), "_Operation");
 
             var enumVariableType = AccessTools.Inner(operationType, "EnumValuedVariable`1")
-                    .MakeGenericType(typeof(LogicType));
+                .MakeGenericType(typeof(LogicType));
 
             harmony.Patch(
                 AccessTools.Method(enumVariableType, "GetTypeOf"),
@@ -108,11 +84,11 @@ internal static class LogicRegistry
                     )
                 )
             );
-            
+
             _initialized = true;
         }
     }
-    
+
     private sealed class Entry
     {
         public LogicPropertyInfo Property { get; }
@@ -129,16 +105,16 @@ internal static class LogicRegistry
     internal static IEnumerable<LogicPropertyInfo> Properties => Entries.Values.Select(x => x.Property);
 
     private static bool _finalized;
-    
+
     internal static LogicPropertyInfo Add(
         Mod mod,
         string name,
         LogicNetworkType networkType)
     {
-        if (_finalized) // finalized guard
+        if (_finalized)
             throw new InvalidOperationException(
                 "Logic types cannot be modified after finalization.");
-        
+
         if (Entries.TryGetValue(name, out var entry))
         {
             if (entry.Property.NetworkType != networkType)
@@ -161,10 +137,10 @@ internal static class LogicRegistry
 
     internal static bool Remove(Mod mod, LogicPropertyInfo property)
     {
-        if (_finalized) // finalized guard
+        if (_finalized)
             throw new InvalidOperationException(
                 "Logic types cannot be modified after finalization.");
-        
+
         if (!Entries.TryGetValue(property.Name, out var entry))
             return false;
 
@@ -179,7 +155,7 @@ internal static class LogicRegistry
 
         return true;
     }
-    
+
     internal static void FinalizeRegistry()
     {
         if (_finalized)
@@ -200,13 +176,13 @@ internal static class LogicRegistry
         Logicable.LogicTypes = Logicable.LogicTypes
             .Concat(Entries.Values.Select(x => x.Property.LogicType))
             .ToArray();
-        
+
         ExtendEnumCollection();
-        
+
         ProgrammableChip.InternalEnums.Insert(
             0,
             new LogicScriptEnum());
-            
+
         _finalized = true;
     }
 
@@ -216,7 +192,7 @@ internal static class LogicRegistry
     {
         return ByLogicType.TryGetValue(logicType, out property);
     }
-    
+
     internal static bool TryGet(
         string name,
         out LogicPropertyInfo property)
@@ -230,7 +206,7 @@ internal static class LogicRegistry
         property = null;
         return false;
     }
-    
+
     private static void ExtendEnumCollection()
     {
         var properties = Entries.Values

@@ -28,15 +28,4 @@ internal static class LogicStationpediaPatch
 
         return false;
     }
-    
-    internal static bool GetLogicDescription(
-        LogicType __0,
-        ref string __result)
-    {
-        if (!LogicRegistry.TryGet(__0, out var property))
-            return true;
-
-        __result = property.Name;
-        return false;
-    }
 }
