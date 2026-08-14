@@ -200,6 +200,8 @@ internal static class LogicRegistry
             0,
             new LogicScriptEnum());
 
+        LogicMotherboardSavePatch.ExtendLogicTypes();
+        
         _finalized = true;
     }
 

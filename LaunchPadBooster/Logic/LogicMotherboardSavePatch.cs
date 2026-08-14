@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using Assets.Scripts.Objects;
 using Assets.Scripts.Objects.Motherboards;
 using HarmonyLib;
+using System.Linq;
+using Assets.Scripts.UI.Motherboard;
 
 namespace LaunchPadBooster.Logic;
 
@@ -132,8 +134,20 @@ internal static class LogicMotherboardSavePatch
                 }
             }
         }
+        
     }
 
+    internal static void ExtendLogicTypes()
+    {
+        ScreenDropdownBase.LogicTypes =
+            ScreenDropdownBase.LogicTypes
+                .Concat(
+                    LogicRegistry.Properties
+                        .Select(x => x.LogicType))
+                .Distinct()
+                .ToArray();
+    }
+    
     internal static void ApplyPatches(Harmony harmony)
     {
         harmony.Patch(
