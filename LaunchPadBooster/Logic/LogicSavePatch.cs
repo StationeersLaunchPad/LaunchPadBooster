@@ -4,8 +4,8 @@ using System.Reflection;
 using Assets.Scripts.Objects;
 using Assets.Scripts.Objects.Electrical;
 using Assets.Scripts.Objects.Motherboards;
-using HarmonyLib;
 using Assets.Scripts.Serialization;
+using HarmonyLib;
 
 namespace LaunchPadBooster.Logic;
 
@@ -40,6 +40,8 @@ internal static class LogicSavePatch
         AddExtraType(__0, typeof(CustomLogicWriterSaveData));
         AddExtraType(__0, typeof(CustomLogicBatchWriterSaveData));
         AddExtraType(__0, typeof(CustomLogicWriterSwitchSaveData));
+
+        LogicMotherboardSavePatch.AddExtraTypes(__0);
     }
 
     private static void AddExtraType(List<Type> types, Type type)
@@ -181,7 +183,7 @@ internal static class LogicSavePatch
 
         saveData = (ThingSaveData)arguments[0];
     }
-    
+
     internal static void ApplyPatches(Harmony harmony)
     {
         harmony.Patch(
@@ -274,5 +276,5 @@ internal static class LogicSavePatch
                 )
             )
         );
-    }   
+    }
 }
