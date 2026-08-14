@@ -4,18 +4,18 @@
   <PropertyGroup>
     <TargetFramework>netstandard2.1</TargetFramework>
     <LangVersion>14.0</LangVersion>
-    <LanguageTargets>$(MSBuildToolsPath)\Microsoft.CSharp.targets</LanguageTargets>
+    <LanguageTargets>$(MSBuildToolsPath)/Microsoft.CSharp.targets</LanguageTargets>
 
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
     <PlatformTarget>AnyCPU</PlatformTarget>
     <Targets>AnyCPU</Targets>
-    <OutputPath>$(SolutionDir)bin\$(Configuration)</OutputPath>
+    <OutputPath>$(SolutionDir)bin/$(Configuration)</OutputPath>
 
-    <StationeersManagedDirectory>$(StationeersDirectory)\rocketstation_Data\Managed</StationeersManagedDirectory>
-    <BIECoreDirectory>$(StationeersDirectory)\BepInEx\core</BIECoreDirectory>
-    <SLPPluginPath>$(StationeersDirectory)\BepInEx\plugins\StationeersLaunchPad</SLPPluginPath>
+    <StationeersManagedDirectory>$(StationeersDirectory)/rocketstation_Data/Managed</StationeersManagedDirectory>
+    <BIECoreDirectory>$(StationeersDirectory)/BepInEx/core</BIECoreDirectory>
+    <SLPPluginPath>$(StationeersDirectory)/BepInEx/plugins/StationeersLaunchPad</SLPPluginPath>
 
     <NoStandardLibraries>true</NoStandardLibraries>
     <NoStdLib>true</NoStdLib>
@@ -54,8 +54,8 @@
     <GameReference Include="0Harmony" />
 
     <!-- search game and bepinex folder for named references -->
-    <_GameRefCandidate Include="@(GameReference->'$(StationeersManagedDirectory)\%(Identity).dll')" />
-    <_GameRefCandidate Include="@(GameReference->'$(BIECoreDirectory)\%(Identity).dll')" />
+    <_GameRefCandidate Include="@(GameReference->'$(StationeersManagedDirectory)/%(Identity).dll')" />
+    <_GameRefCandidate Include="@(GameReference->'$(BIECoreDirectory)/%(Identity).dll')" />
     <_GameRefResolved Include="@(_GameRefCandidate->Exists())" Path="%(FullPath)" />
 
     <Reference Include="@(_GameRefResolved->'%(FileName)')" HintPath="%(Path)" Private="False" />
@@ -63,9 +63,9 @@
     <_MissingRef Include="@(GameReference)" Exclude="@(Reference)" />
 
     <!-- include all system dlls -->
-    <SystemDll Include="$(StationeersManagedDirectory)\System*.dll" />
+    <SystemDll Include="$(StationeersManagedDirectory)/System*.dll" />
     <SystemRefs Include="@(SystemDll->'%(Filename)')">
-      <HintPath>$(StationeersManagedDirectory)\%(Identity).dll</HintPath>
+      <HintPath>$(StationeersManagedDirectory)/%(Identity).dll</HintPath>
     </SystemRefs>
     <Reference Include="@(SystemRefs)" Private="False" />
   </ItemGroup>
