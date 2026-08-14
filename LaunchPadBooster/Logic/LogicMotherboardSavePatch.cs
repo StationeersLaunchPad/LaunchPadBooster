@@ -140,11 +140,11 @@ internal static class LogicMotherboardSavePatch
     internal static void ExtendLogicTypes()
     {
         ScreenDropdownBase.LogicTypes =
-            ScreenDropdownBase.LogicTypes
+            Enum.GetValues(typeof(LogicType))
+                .Cast<LogicType>()
                 .Concat(
                     LogicRegistry.Properties
                         .Select(x => x.LogicType))
-                .Distinct()
                 .ToArray();
     }
     
