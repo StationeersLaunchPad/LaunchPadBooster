@@ -122,4 +122,10 @@ public class PrefabSetup<T> : IPrefabSetup
   {
     PrefabUtils.AddToMultiConstructorKit(prefab as Structure, kitName, order);
   }
+  
+  public PrefabSetup<T> RemoveFromMultiConstructorKit(string kitName) => RunFunc(prefab => _RemoveFromMultiConstructorKit(prefab, kitName));
+  private static void _RemoveFromMultiConstructorKit(T prefab, string kitName)
+  {
+    PrefabUtils.RemoveFromMultiConstructorKit(prefab as Structure, kitName);
+  }
 }

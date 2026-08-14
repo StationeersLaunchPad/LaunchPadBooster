@@ -25,6 +25,13 @@ internal partial class ModNetworking : IModNetworking
     InstancesByHash.Add(mod.Hash, this);
   }
 
+  internal void RemoveRegistrations()
+  {
+    messageRegistry.UnregisterMod(mod);
+    rpcRegistry.UnregisterMod(mod);
+    legacyRegistry.UnregisterMod(mod);
+  }
+  
   public bool Required
   {
     get;

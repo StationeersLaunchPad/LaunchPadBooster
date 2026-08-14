@@ -23,7 +23,15 @@ public sealed class Mod
   internal readonly List<IPrefabSetup> Setups = [];
   internal readonly List<Type> SaveDataTypes = [];
 
-  public IModNetworking Networking => field ??= new ModNetworking(this);
+  private ModNetworking _networking;
+  public IModNetworking Networking
+  {
+    get
+    {
+      EnsureRegistered();
+      return _networking ??= new ModNetworking(this);
+    }
+  }
 
   public Mod(string name, string version)
   {
@@ -38,6 +46,18 @@ public sealed class Mod
     }
   }
 
+  private void EnsureRegistered()
+  {
+    lock (allLock)
+    {
+      if (!ModsByHash.ContainsKey(Hash))
+        ModsByHash.Add(Hash, this);
+
+      if (!AllMods.Contains(this))
+        AllMods.Add(this);
+    }
+  }
+  
   [Obsolete("""
     Use Mod.Networking.VersionValidator instead, or implement IJoinValidator for custom join validation
   """, true)]
@@ -54,8 +74,15 @@ public sealed class Mod
 
   public void AddSaveDataType<T>()
   {
+    EnsureRegistered();
+    
     SaveDataPatch.Initialize();
     SaveDataTypes.Add(typeof(T));
+  }
+
+  public void RemoveSaveDataTypes()
+  {
+    SaveDataTypes.Clear();
   }
 
   [Obsolete("""
@@ -71,21 +98,65 @@ public sealed class Mod
   {
     var thingPrefabs =
       prefabs.Select(prefab => prefab.GetComponent<Thing>()).Where(thing => thing != null).ToList();
+
     if (thingPrefabs.Count == 0)
       return;
+
+    EnsureRegistered();
+    
     (Networking as ModNetworking).HasPrefabs = true;
+
     PrefabPatch.Initialize();
     Prefabs.AddRange(thingPrefabs);
   }
 
+  public void RemovePrefabs()
+  {
+    Prefabs.Clear();
+    Setups.Clear();
+
+    if (ModNetworking.InstancesByHash.TryGetValue(Hash, out var networking))
+      networking.HasPrefabs = false;
+  }
+
+  public void RemoveNetworkRegistrations()
+  {
+    if (ModNetworking.InstancesByHash.TryGetValue(Hash, out var networking))
+      networking.RemoveRegistrations();
+  }
+
   public PrefabSetup<T> SetupPrefabs<T>(string name = null)
   {
+    EnsureRegistered();
+    
     var setup = new PrefabSetup<T>(name);
     Setups.Add(setup);
     return setup;
   }
 
   public PrefabSetup<Thing> SetupPrefabs(string name = null) => SetupPrefabs<Thing>(name);
+
+  public void Remove()
+  {
+    if (ModNetworking.InstancesByHash.TryGetValue(Hash, out var networking))
+    {
+      ModNetworking.Instances.Remove(networking);
+      ModNetworking.InstancesByHash.Remove(Hash);
+    }
+
+    if (_networking != null)
+    {
+      ModNetworking.Instances.Remove(_networking);
+      ModNetworking.InstancesByHash.Remove(Hash);
+      _networking = null;
+    }
+    
+    lock (allLock)
+    {
+      ModsByHash.Remove(Hash);
+      AllMods.Remove(this);
+    }
+  }
 }
 
 public readonly struct ModID(string name, string version)
