@@ -99,19 +99,6 @@ internal static class LogicRegistry
                 )
             );
             
-            harmony.Patch(
-                AccessTools.Method(
-                    typeof(LogicReader),
-                    nameof(LogicReader.GetPassiveTooltip)
-                ),
-                postfix: new HarmonyMethod(
-                    AccessTools.Method(
-                        typeof(LogicReaderPatch),
-                        nameof(LogicReaderPatch.GetPassiveTooltip)
-                    )
-                )
-            );
-            
             _initialized = true;
         }
     }
