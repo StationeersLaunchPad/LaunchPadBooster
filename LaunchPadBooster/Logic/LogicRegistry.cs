@@ -7,6 +7,7 @@ using LaunchPadBooster.Utils;
 using Assets.Scripts.Objects;
 using Assets.Scripts.Objects.Pipes;
 using Assets.Scripts;
+using Assets.Scripts.Objects.Electrical;
 
 namespace LaunchPadBooster.Logic;
 
@@ -45,7 +46,7 @@ internal static class LogicRegistry
             harmony.Patch(
                 AccessTools.Method(
                     AccessTools.TypeByName("_Operation"),
-                    "_GetLogicType"
+                    "_GetLogicType" 
                 ),
                 prefix: new HarmonyMethod(
                     AccessTools.Method(
@@ -89,6 +90,21 @@ internal static class LogicRegistry
                     AccessTools.Method(
                         typeof(LogicStationpediaPatch),
                         nameof(LogicStationpediaPatch.GetLogicDescription)
+                    )
+                )
+            );
+            
+            var operationType = AccessTools.Inner(typeof(ProgrammableChip), "_Operation");
+
+            var enumVariableType = AccessTools.Inner(operationType, "EnumValuedVariable`1")
+                    .MakeGenericType(typeof(LogicType));
+
+            harmony.Patch(
+                AccessTools.Method(enumVariableType, "GetTypeOf"),
+                prefix: new HarmonyMethod(
+                    AccessTools.Method(
+                        typeof(LogicIc10Patch),
+                        nameof(LogicIc10Patch.GetTypeOf)
                     )
                 )
             );
@@ -187,6 +203,10 @@ internal static class LogicRegistry
         
         ExtendEnumCollection();
         
+        ProgrammableChip.InternalEnums.Insert(
+            0,
+            new LogicScriptEnum());
+            
         _finalized = true;
     }
 
