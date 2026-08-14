@@ -8,6 +8,7 @@ using Assets.Scripts.Objects.Motherboards;
 using Assets.Scripts.Objects.Pipes;
 using HarmonyLib;
 using LaunchPadBooster.Utils;
+using Assets.Scripts.Serialization;
 
 namespace LaunchPadBooster.Logic;
 
@@ -98,6 +99,8 @@ internal static class LogicRegistry
                     )
                 )
             );
+            
+            LogicSavePatch.ApplyPatches(harmony);
             
             _initialized = true;
         }
