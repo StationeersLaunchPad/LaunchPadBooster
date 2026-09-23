@@ -51,12 +51,13 @@ internal partial class ModNetworking
 
   private static partial class Patches
   {
-    // Replace throw ArgumentOutOfRangeException on unmatched NetworkChannel
+    // Claim our NetworkChannel with a check before the unmatched channel throw.
+    // The throw stays, so other mods patching the same way still find it.
     [HarmonyPatch(typeof(NetworkManager), "ReceiveEvents"), HarmonyTranspiler]
     internal static IEnumerable<CodeInstruction> TranspileReceiveEvents(
-      IEnumerable<CodeInstruction> instructions)
+      IEnumerable<CodeInstruction> instructions, ILGenerator generator)
     {
-      var matcher = new CodeMatcher(instructions);
+      var matcher = new CodeMatcher(instructions, generator);
 
       matcher.MatchStartForward(
         new CodeMatch(inst =>
@@ -73,11 +74,16 @@ internal partial class ModNetworking
       matcher.ThrowIfInvalid(
         "Could not find throw ArgumentOutOfRangeException in NetworkManager.ReceiveEvents");
 
+      // jumps to the throw now land on our check, other channels fall through to it
       var labels = matcher.Instruction.labels;
+      matcher.Instruction.labels = [];
+      matcher.CreateLabel(out var notOurs);
 
-      matcher.RemoveInstructions(2);
       matcher.InsertAndAdvance(
         new CodeInstruction(OpCodes.Ldloc_1) { labels = labels }, // channel
+        new CodeInstruction(OpCodes.Ldc_I4, (int)BoosterNetworkChannel),
+        new CodeInstruction(OpCodes.Bne_Un, notOurs),
+        new CodeInstruction(OpCodes.Ldloc_1), // channel
         new CodeInstruction(OpCodes.Ldloc_2), // size
         new CodeInstruction(OpCodes.Ldloc_3), // connectionId
         CodeInstruction.Call(() => ReceiveUnknownEvent(default, default, default)),
