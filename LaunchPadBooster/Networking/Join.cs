@@ -366,9 +366,18 @@ internal partial class ConnectionState
   public void ReceiveJoinValidateHeader(ref JoinValidateHeader header)
   {
     DEBUG?.Invoke($"Received join validate header from {ConnectionID} {ConnectionMethod}");
+
+    var (localName, remoteName) = NetworkManager.IsServer ? ("server", "client") : ("client", "server");
+
+    if (!header.Present)
+    {
+      CloseWithError($"SLP (Booster) not detected on the {remoteName} (missing, or a version too old to support this check)");
+      return;
+    }
     if (header.NetworkVersion != ModNetworking.NetworkVersion)
     {
-      CloseWithError("Invalid booster networking version");
+      CloseWithError(
+        $"SLP (Booster) version mismatch: {localName} v{ModNetworking.NetworkVersion}, {remoteName} v{header.NetworkVersion}. Update SLP.");
       return;
     }
     JoinFlags = header.Flags;
@@ -420,6 +429,7 @@ internal enum JoinValidateFlags : int { }
 // Appended to VerifyPlayer/VerifyPlayerRequest
 internal struct JoinValidateHeader
 {
+  public bool Present;
   public byte NetworkVersion;
   // these are currently empty, but are reserved space so we can add flags in the future if needed
   public JoinValidateFlags Flags;
@@ -429,15 +439,25 @@ internal struct JoinValidateHeader
     try
     {
       NetworkVersion = reader.ReadByte();
-      // don't try to read any more if version doesn't match
-      if (NetworkVersion != ModNetworking.NetworkVersion)
-        return;
+    }
+    catch (EndOfStreamException)
+    {
+      // header wasn't appended at all, e.g. peer has no LaunchPadBooster
+      Present = false;
+      return;
+    }
+    Present = true;
+    // don't try to read any more if version doesn't match
+    if (NetworkVersion != ModNetworking.NetworkVersion)
+      return;
+    try
+    {
       Flags = (JoinValidateFlags)reader.ReadInt32();
     }
     catch (EndOfStreamException)
     {
-      // if not present or malformed, set NetworkVersion to invalid
-      NetworkVersion = 0;
+      // flags are currently unused reserved space, a truncated read here isn't a real problem
+      Debug.LogWarning("Truncated read of reserved JoinValidateHeader flags");
     }
   }
 
