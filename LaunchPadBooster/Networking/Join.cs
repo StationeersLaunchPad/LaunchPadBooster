@@ -3,6 +3,7 @@ using System;
 using System.Buffers;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text;
 using Assets.Scripts;
 using Assets.Scripts.Atmospherics;
@@ -283,22 +284,42 @@ internal partial class ConnectionState
     if (missingLocal.Count + missingRemote.Count + versionMismatch.Count + versionError.Count == 0)
       return true;
 
-    var (localName, remoteName) = NetworkManager.IsServer ? ("server", "client") : ("client", "server");
+    foreach (var (name, version, hash) in missingLocal)
+      Debug.LogWarning($"Join: {LocalSide} missing mod {name}@{version} (hash {hash})");
+    foreach (var (name, version, hash) in missingRemote)
+      Debug.LogWarning($"Join: {RemoteSide} missing mod {name}@{version} (hash {hash})");
+
+    // the text ends up with the player, whichever side wrote it
+    var server = NetworkManager.IsServer;
+    var youMissing = server ? missingRemote : missingLocal;
+    var serverMissing = server ? missingLocal : missingRemote;
+    string Versions((string name, string vlocal, string vremote) mod) =>
+      $"{mod.name}: you have {(server ? mod.vremote : mod.vlocal)}, the server has {(server ? mod.vlocal : mod.vremote)}";
 
     var sb = new StringBuilder();
-
-    foreach (var (name, version, hash) in missingLocal)
-      sb.AppendLine($"{localName} missing mod {name}@{version} (hash {hash})");
-    foreach (var (name, version, hash) in missingRemote)
-      sb.AppendLine($"{remoteName} missing mod {name}@{version} (hash {hash})");
-
-    foreach (var (name, vlocal, vremote) in versionMismatch)
-      sb.AppendLine($"{localName} {name}@{vlocal} version incompatible with {remoteName} {name}@{vremote}");
-    foreach (var (name, vlocal, vremote) in versionError)
-      sb.AppendLine($"Error validating version {localName} {name}@{vlocal} against {remoteName} {name}@{vremote}");
-
-    CloseWithError(sb.ToString());
+    AppendGroup(sb, "You're missing:", youMissing.Select(mod => $"{mod.name} {mod.version}"));
+    AppendGroup(sb, "The server doesn't run:", serverMissing.Select(mod => $"{mod.name} {mod.version}"));
+    AppendGroup(sb, "Different versions:", versionMismatch.Select(Versions));
+    AppendGroup(sb, "Couldn't compare the versions of:", versionError.Select(Versions));
+    CloseWithError(sb.ToString().TrimEnd());
     return false;
+  }
+
+  private const int MaxListed = 8;
+
+  private static string LocalSide => NetworkManager.IsServer ? "server" : "client";
+  private static string RemoteSide => NetworkManager.IsServer ? "client" : "server";
+
+  private static void AppendGroup(StringBuilder sb, string title, IEnumerable<string> lines)
+  {
+    var list = lines.ToList();
+    if (list.Count == 0)
+      return;
+    sb.AppendLine($"[Booster] {title}");
+    foreach (var line in list.Take(MaxListed))
+      sb.AppendLine($"  {line}");
+    if (list.Count > MaxListed)
+      sb.AppendLine($"  and {list.Count - MaxListed} more");
   }
 
   private bool DoJoinValidateModCustom(JoinValidateModCustomData custom)
@@ -347,28 +368,41 @@ internal partial class ConnectionState
     if (missingLocal.Count + missingRemote.Count + rejections.Count + errors.Count == 0)
       return true;
 
-    var (localName, remoteName) = NetworkManager.IsServer ? ("server", "client") : ("client", "server");
+    foreach (var modHash in missingLocal)
+      Debug.LogWarning($"Join: {LocalSide} missing join validator for {GetModName(modHash)}");
+    foreach (var modHash in missingRemote)
+      Debug.LogWarning($"Join: {RemoteSide} missing join validator for {GetModName(modHash)}");
 
     var sb = new StringBuilder();
-    foreach (var modHash in missingLocal)
-      sb.AppendLine($"{localName} missing join validator for {GetModName(modHash)}");
-    foreach (var modHash in missingRemote)
-      sb.AppendLine($"{remoteName} missing join validator for {GetModName(modHash)}");
     foreach (var (modHash, error) in rejections)
-      sb.AppendLine($"{localName} {GetModName(modHash)} join validation failed: {error}");
-    foreach (var modHash in errors)
-      sb.AppendLine($"{localName} {GetModName(modHash)} errored during join validation");
-
-    CloseWithError(sb.ToString());
+      sb.AppendLine($"[Booster] {GetModName(modHash)} refused the join: {error}");
+    foreach (var modHash in missingLocal.Concat(missingRemote).Concat(errors).Distinct())
+      sb.AppendLine($"[Booster] {GetModName(modHash)} couldn't check the join. Make sure you and the server run the same version.");
+    CloseWithError(sb.ToString().TrimEnd());
     return false;
   }
 
   public void ReceiveJoinValidateHeader(ref JoinValidateHeader header)
   {
     DEBUG?.Invoke($"Received join validate header from {ConnectionID} {ConnectionMethod}");
+
+    var server = NetworkManager.IsServer;
+    if (!header.Present)
+    {
+      // booster only loads with mods that use it
+      CloseWithError(server
+        ? "[Booster] The server runs mods you don't have enabled."
+        : "[Booster] You have mods enabled that the server doesn't run.");
+      return;
+    }
     if (header.NetworkVersion != ModNetworking.NetworkVersion)
     {
-      CloseWithError("Invalid booster networking version");
+      Debug.LogWarning($"Join: network version {LocalSide} v{ModNetworking.NetworkVersion}, {RemoteSide} v{header.NetworkVersion}");
+      var clientVersion = server ? header.NetworkVersion : ModNetworking.NetworkVersion;
+      var serverVersion = server ? ModNetworking.NetworkVersion : header.NetworkVersion;
+      CloseWithError(clientVersion < serverVersion
+        ? "[Booster] Your SLP is too old for this server. Update SLP and restart the game."
+        : "[Booster] This server runs an older SLP. The server admin needs to update it.");
       return;
     }
     JoinFlags = header.Flags;
@@ -420,6 +454,7 @@ internal enum JoinValidateFlags : int { }
 // Appended to VerifyPlayer/VerifyPlayerRequest
 internal struct JoinValidateHeader
 {
+  public bool Present;
   public byte NetworkVersion;
   // these are currently empty, but are reserved space so we can add flags in the future if needed
   public JoinValidateFlags Flags;
@@ -429,15 +464,25 @@ internal struct JoinValidateHeader
     try
     {
       NetworkVersion = reader.ReadByte();
-      // don't try to read any more if version doesn't match
-      if (NetworkVersion != ModNetworking.NetworkVersion)
-        return;
+    }
+    catch (EndOfStreamException)
+    {
+      // header wasn't appended at all, e.g. peer has no LaunchPadBooster
+      Present = false;
+      return;
+    }
+    Present = true;
+    // don't try to read any more if version doesn't match
+    if (NetworkVersion != ModNetworking.NetworkVersion)
+      return;
+    try
+    {
       Flags = (JoinValidateFlags)reader.ReadInt32();
     }
     catch (EndOfStreamException)
     {
-      // if not present or malformed, set NetworkVersion to invalid
-      NetworkVersion = 0;
+      // flags are currently unused reserved space, a truncated read here isn't a real problem
+      Debug.LogWarning("Truncated read of reserved JoinValidateHeader flags");
     }
   }
 
