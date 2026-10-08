@@ -23,7 +23,7 @@ public static class PrefabUtils
       if (thing.PaintableMaterial == material)
         thing.PaintableMaterial = replaceMat;
 
-      foreach (var renderer in thing.GetComponentsInChildren<MeshRenderer>(true))
+      foreach (var renderer in thing.GetComponentsInChildren<Renderer>(true))
       {
         var mats = renderer.sharedMaterials;
         for (var i = 0; i < mats.Length; i++)
